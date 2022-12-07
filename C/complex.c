@@ -7,27 +7,34 @@ int main() {
     double complex c2 = -1.0+4.0*I;
     double complex c1 = cexp(I*2*M_PI/2);
     double complex c3 = c1 * c2;
-    
-    double complex a[4] = {0, 1, 2, 3};
+
+    double complex a[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+    double complex A[8];
     double complex b[2] = {0, 1};
+    double complex B[2];
+    double complex c[8]; 
+    double complex d[8];
 
-    double complex * A = FFT_r(a, 4);
-    double complex * B = FFT_r(b, 2); 
-    double complex * c = IFFT_r(A, 4);
-    double complex * d = IFFT_r(B, 2);
+    FFT_r(a, A, 8);
+    FFT_r(b, B, 2); 
+    IFFT_r(A, c, 8);
+    IFFT_r(B, d, 2);
 
-    printf("Subtraction of complex numbers:\n");
-    printf("values of complex number: A0=%.2lf+%.2lfi\n", creal(*(A)), cimag(*(A)));
-    printf("values of complex number: A1=%.2lf+%.2lfi\n", creal(*(A+1)), cimag(*(A+1)));
-    printf("values of complex number: A2=%.2lf+%.2lfi\n", creal(*(A+2)), cimag(*(A+2)));
-    printf("values of complex number: A3=%.2lf+%.2lfi\n", creal(*(A+3)), cimag(*(A+3)));
-    printf("values of complex number: B0=%.2lf+%.2lfi\n", creal(*(B)), cimag(*(B)));
-    printf("values of complex number: B1=%.2lf+%.2lfi\n", creal(*(B+1)), cimag(*(B+1)));
-
-    printf("values of complex number: c0=%.2lf+%.2lfi\n", creal(*(c)), cimag(*(c)));
-    printf("values of complex number: c1=%.2lf+%.2lfi\n", creal(*(c+1)), cimag(*(c+1)));
-    printf("values of complex number: c2=%.2lf+%.2lfi\n", creal(*(c+2)), cimag(*(c+2)));
-    printf("values of complex number: c3=%.2lf+%.2lfi\n", creal(*(c+3)), cimag(*(c+3)));
-    printf("values of complex number: d0=%.2lf+%.2lfi\n", creal(*(d)), cimag(*(d)));
-    printf("values of complex number: d1=%.2lf+%.2lfi\n", creal(*(d+1)), cimag(*(d+1)));
+    
+    printf("A:\n");
+    for (int i = 0; i < 8; i++) {
+        printf("values of complex number: %.2lf+%.2lfi\n", creal(*(A+i)), cimag(*(A+i)));
+    }
+    printf("B:\n");
+    for (int i = 0; i < 2; i++) {
+        printf("values of complex number: %.2lf+%.2lfi\n", creal(*(B+i)), cimag(*(B+i)));
+    }
+    printf("c:\n");
+    for (int i = 0; i < 8; i++) {
+        printf("values of complex number: %.2lf+%.2lfi\n", creal(*(c+i)), cimag(*(c+i)));
+    }
+    printf("d:\n");
+    for (int i = 0; i < 2; i++) {
+        printf("values of complex number: %.2lf+%.2lfi\n", creal(*(d+i)), cimag(*(d+i)));
+    }
 }

@@ -1,5 +1,12 @@
 {
     "files.associations": {
         "complex.h": "c"
-    }
+    },
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "c:\\Users\\natha\\repos\\WRAP\\C",
+            "binaryPath": "c:\\Users\\natha\\repos\\WRAP\\C\\complex",
+            "binaryArgs": []
+        }
+    ]
 }
