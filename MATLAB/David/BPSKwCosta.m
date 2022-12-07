@@ -115,7 +115,6 @@ for i = order+1:N
     % low pass filter to get rid of high frequency components
     inph(i-order:i) = filter(lp, 1, inph_(i-order:i));
     quad(i-order:i) = filter(lp, 1, quad_(i-order:i));
-    
 
     % mix in_ph and quad to get error signal
     err(i) = inph(i)*quad(i);
@@ -166,7 +165,7 @@ zero_cross = ~(sign(i(1:end-1).*i(2:end))+1);
 %Get data rate
 sps = 100;
 
-%PLL clock recoverypl
+%PLL clock recovery pll
 Kp_PLL = 0.3;
 Ki_PLL = 1.1;
 phase_acc = pi+0.00001;
