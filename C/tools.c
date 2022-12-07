@@ -15,8 +15,7 @@ int log2_(int N) {
 }
 
 // Radix-2 FFT with recursion. Solution Works, but is quite space inefficient.
-// Requires N/2 recursive frames...
-// need to free up memory
+// Requires N/2 recursive frames, creating arrays of length 1024 each instance.
 void FFT_r(double complex* x, double complex * X, int N) {
     // Allocate memory for split samples
     double complex x_e[max_N>>1];
@@ -47,14 +46,12 @@ void FFT_r(double complex* x, double complex * X, int N) {
     }
 }
 
-// Radix-2 FFT with dynamic programming. INCOMPLETE.
-double complex* FFTdp(double complex* x, int N) {
-    printf("b\n");
+// Radix-2 FFT with dynamic programming. Space efficiency N. INCOMPLETE.
+// would it be worth it to make space NlogN to cut computation time in half?
+void FFTdp(double complex* x, double complex* X, int N) {
     // allocate memory
-    double complex* X = (double complex*) malloc(N*sizeof(double));
-    double complex* x_e = (double complex*) malloc(N>>1 * sizeof(double));
-    double complex* x_o = (double complex*) malloc(N>>1 * sizeof(double));
-    printf("b2\n");
+    double complex x_e[max_N>>1];
+    double complex x_o[max_N>>1];
     // copy x into X so we don't modify x. 
     for (int i = 0; i < N; i++) {
         *(X + i) = *(x + i);
@@ -64,16 +61,13 @@ double complex* FFTdp(double complex* x, int N) {
     // break down x into smallest parts. O(N log(N))
     int p = log2_(N);
     // Outside loop O(log(N))
-    printf("b3\n");
     for (int i = 0; i < p; i++) {
         // two for loops below O(N) time
         for (int j = 0; j < (1<<i); j++) {
-            printf("%.2lf+%.2lfi\n", creal(*(X+1)), cimag(*(X+1)));
             for (int k = 0; k < (N>>(i+1)); k++) {
                 *(x_e + k) = *(X + 2*k + j*(N>>i));
                 *(x_o + k) = *(X + 2*k + 1 + j*(N>>i));
             }
-            printf("%.2lf+%.2lfi\n", creal(*(X)), cimag(*(X)));
             for (int k = 0; k < (N>>(i+1)); k++) {
                 *(X + k + j*(N>>i)) = *(x_e + k);
                 *(X + k + j*(N>>i) + (N>>(i+1))) = *(x_o + k);
@@ -81,8 +75,6 @@ double complex* FFTdp(double complex* x, int N) {
             
         }
     }
-    printf("you made it\n");
-    return X;
 }
 
 void IFFT_r(double complex* X, double complex* x, int N) {
@@ -115,11 +107,11 @@ void IFFT_r(double complex* X, double complex* x, int N) {
     }
 }
 
-double* IFFTdp(double* X, int N) {
-    return NULL;
+void IFFTdp(double complex* X, double complex* x, int N) {
+    return;
 }
 
 // crosscorrelation function
-double * xcorr(double* x, int N) {
-    return NULL;
+void xcorr(double* x, double* X, int N) {
+    return;
 }
