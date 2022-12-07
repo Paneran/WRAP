@@ -1,3 +1,8 @@
+//==========================================
+// Title:  Toolbox for WRAP MCU
+// Author: Nathan Pereira
+// Last Modified: December 7, 2022
+//==========================================
 #include <complex.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,37 +51,6 @@ void FFT_r(double complex* x, double complex * X, int N) {
     }
 }
 
-// Radix-2 FFT with dynamic programming. Space efficiency N. INCOMPLETE.
-// would it be worth it to make space NlogN to cut computation time in half?
-void FFTdp(double complex* x, double complex* X, int N) {
-    // allocate memory
-    double complex x_e[max_N>>1];
-    double complex x_o[max_N>>1];
-    // copy x into X so we don't modify x. 
-    for (int i = 0; i < N; i++) {
-        *(X + i) = *(x + i);
-    }
-    
-    // BELOW INCOMPLETE
-    // break down x into smallest parts. O(N log(N))
-    int p = log2_(N);
-    // Outside loop O(log(N))
-    for (int i = 0; i < p; i++) {
-        // two for loops below O(N) time
-        for (int j = 0; j < (1<<i); j++) {
-            for (int k = 0; k < (N>>(i+1)); k++) {
-                *(x_e + k) = *(X + 2*k + j*(N>>i));
-                *(x_o + k) = *(X + 2*k + 1 + j*(N>>i));
-            }
-            for (int k = 0; k < (N>>(i+1)); k++) {
-                *(X + k + j*(N>>i)) = *(x_e + k);
-                *(X + k + j*(N>>i) + (N>>(i+1))) = *(x_o + k);
-            }
-            
-        }
-    }
-}
-
 void IFFT_r(double complex* X, double complex* x, int N) {
         // Allocate memory for output FFT and split samples
     double complex X_e[max_N>>1];
@@ -107,8 +81,107 @@ void IFFT_r(double complex* X, double complex* x, int N) {
     }
 }
 
-void IFFTdp(double complex* X, double complex* x, int N) {
-    return;
+// Radix-2 FFT with dynamic programming. Space complexity N.
+// would it be worth it to make space NlogN to cut computation time in half?
+void FFTdp(double complex* x, double complex* X, int N) {
+    // allocate memory
+    double complex X_e[max_N>>1];
+    double complex X_o[max_N>>1];
+    // copy x into X so we don't modify x. 
+    for (int i = 0; i < N; i++) {
+        *(X + i) = *(x + i);
+    }
+    
+    // decompose x into its 2 point pairs for DFT. O(N log(N))
+    int p = log2_(N);
+    // Outside loop O(log(N))
+    for (int i = 0; i < p; i++) {
+        // two for loops below O(N) time
+        for (int j = 0; j < (1<<i); j++) {
+            for (int k = 0; k < (N>>(i+1)); k++) {
+                *(X_e + k) = *(X + 2*k + j*(N>>i));
+                *(X_o + k) = *(X + 2*k + 1 + j*(N>>i));
+            }
+            for (int k = 0; k < (N>>(i+1)); k++) {
+                *(X + k + j*(N>>i)) = *(X_e + k);
+                *(X + k + j*(N>>i) + (N>>(i+1))) = *(X_o + k);
+            }    
+        }
+    }
+    
+    // put together the 2 point FFT pairs to make whole FFT. 
+    double complex w, tw;
+    for (int i = 0; i < p; i++) {
+        int l = N>>(p-i); // half length of block
+        w = cexp(-I*2*M_PI/(l<<1));
+        for (int j = 0; j < (N>>(i+1)); j++) { // iterate through each group
+            for (int k = 0; k < l; k++) { // iterate through each point in each group
+                // first half of group is X_e and second half is X_o
+                *(X_e + k) = *(X + j*(1<<(i+1)) + k);
+                *(X_o + k) = *(X + j*(1<<(i+1)) + k + l);
+            }
+            tw = 1;
+            for (int k = 0; k < l; k++) {
+                *(X + k + j*(1<<(i+1))) = *(X_e + k) + *(X_o + k) * tw;
+                *(X + k + j*(1<<(i+1)) + l) = *(X_e + k) - *(X_o + k) * tw;
+                tw *= w;
+            }
+        }
+    } 
+}
+
+// FFTdp and IFFTdp are nearly identical and easy to make one func
+void IFFTdp(double complex* x, double complex* X, int N) {
+    // allocate memory
+    double complex X_e[max_N>>1];
+    double complex X_o[max_N>>1];
+    // copy x into X so we don't modify x. 
+    for (int i = 0; i < N; i++) {
+        *(X + i) = *(x + i);
+    }
+    
+    // decompose x into its 2 point pairs for DFT. O(N log(N))
+    int p = log2_(N);
+    // Outside loop O(log(N))
+    for (int i = 0; i < p; i++) {
+        // two for loops below O(N) time
+        for (int j = 0; j < (1<<i); j++) {
+            for (int k = 0; k < (N>>(i+1)); k++) {
+                *(X_e + k) = *(X + 2*k + j*(N>>i));
+                *(X_o + k) = *(X + 2*k + 1 + j*(N>>i));
+            }
+            for (int k = 0; k < (N>>(i+1)); k++) {
+                *(X + k + j*(N>>i)) = *(X_e + k);
+                *(X + k + j*(N>>i) + (N>>(i+1))) = *(X_o + k);
+            }    
+        }
+    }
+    
+    // put together the 2 point FFT pairs to make whole FFT. 
+    double complex w, tw;
+    for (int i = 0; i < p; i++) {
+        int l = N>>(p-i); // half length of block
+        w = cexp(I*2*M_PI/(l<<1));
+        double complex tw = 1;
+        for (int j = 0; j < (N>>(i+1)); j++) { // iterate through each group
+            for (int k = 0; k < l; k++) { // iterate through each point in each group
+                // first half of group is X_e and second half is X_o
+                *(X_e + k) = *(X + j*(1<<(i+1)) + k);
+                *(X_o + k) = *(X + j*(1<<(i+1)) + l + k);
+            }
+            tw = 1;
+            for (int k = 0; k < l; k++) {
+                *(X + k + j*(1<<(i+1))) = *(X_e + k) + *(X_o + k) * tw;
+                *(X + k + j*(1<<(i+1)) + l) = *(X_e + k) - *(X_o + k) * tw;
+                tw *= w;
+            }
+        }
+    } 
+
+    // divide each element by N
+    for (int i = 0; i < N; i++) {
+        *(X+i) = *(X+i)/N;
+    }
 }
 
 // crosscorrelation function

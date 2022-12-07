@@ -9,7 +9,7 @@ int main() {
     double complex c3 = c1 * c2;
 
     double complex a[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-    double complex A[8];
+    double complex A[8] = {0, 0, 0, 0, 0, 0, 0, 0};
     double complex b[2] = {0, 1};
     double complex B[2];
     double complex c[8]; 
@@ -17,19 +17,20 @@ int main() {
 
     FFTdp(a, A, 8);
     FFTdp(b, B, 2); 
-    //IFFT_r(A, c, 8);
-    //IFFT_r(B, d, 2);
+    IFFTdp(A, c, 8);
+    IFFTdp(B, d, 2);
 
     
     printf("A:\n");
     for (int i = 0; i < 8; i++) {
         printf("values of complex number: %.2lf+%.2lfi\n", creal(*(A+i)), cimag(*(A+i)));
     }
+    
     printf("B:\n");
     for (int i = 0; i < 2; i++) {
         printf("values of complex number: %.2lf+%.2lfi\n", creal(*(B+i)), cimag(*(B+i)));
     }
-    /*
+    
     printf("c:\n");
     for (int i = 0; i < 8; i++) {
         printf("values of complex number: %.2lf+%.2lfi\n", creal(*(c+i)), cimag(*(c+i)));
@@ -38,5 +39,5 @@ int main() {
     for (int i = 0; i < 2; i++) {
         printf("values of complex number: %.2lf+%.2lfi\n", creal(*(d+i)), cimag(*(d+i)));
     }
-    */
+    
 }
