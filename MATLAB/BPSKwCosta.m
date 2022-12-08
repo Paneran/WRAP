@@ -133,7 +133,6 @@ figure();
 plot(1:N+1, ph)
 title("Phase Tracker")
 
-
 % SRRC
 
 span = 5;
@@ -142,7 +141,6 @@ srrc = rcosdesign(0.5, span, sps, 'sqrt');
 l = inph+1j*quad;
 l = upfirdn(l, srrc,1,1);
 l = l(length(srrc)/2+0.5:end-length(srrc)/2+0.5);
-
 
 inph = real(l);
 quad = imag(l);
