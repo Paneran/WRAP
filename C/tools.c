@@ -8,8 +8,10 @@
 #include <stdlib.h>
 #define M_PI 3.1415926535897932384
 
-int max_N = 2048;
+const int max_N = 2048;
+const int MAX_BUFFER = max_N*3 -2;
 
+// log2 copied from Stack Overflow, by Leos313
 int log2_(int N) {
   int k = N, i = 0;
   while(k) {
@@ -185,6 +187,45 @@ void IFFTdp(double complex* x, double complex* X, int N) {
 }
 
 // crosscorrelation function
-void xcorr(double* x, double* X, int N) {
+void xcorr(double* x1, double* x2, double* X, int l1, int l2) {
+    // come up with a solution with pointers so we don't need to create a zero padded array
+    // we can do better
+    double x3[MAX_BUFFER];
+    int z = 0, L;
+    double * a, * b;
+    if (l1 < l2) {
+        z = l1 - 1;
+        a = x2;
+        b = x1;
+        L = l2 + z<<1;
+    } else {
+        z = l2 - 1;
+        a = x1;
+        b = x2;
+        L = l1 + z<<1;
+    }
+
+    for (int i = 0; i < L; i++) {
+        *(X + i) = 0;
+        if (i > z && i < L + z) {
+            *(x3 + i) = *(a+i);
+        } else {
+            *(x3 + i) = 0;
+        }
+    }
+
+    z++;
+    for (int i = 0; i < L; i++) {
+        for (int j = 0; j < z; j++) {
+            *(X + i) += *(x3 + i + j) * *(x2 + j);
+        }
+    }
+}
+
+void complex2double(double complex* a, double * b) {
+    return;
+}
+
+void double2complex(double complex* a, double * b) {
     return;
 }
