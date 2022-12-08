@@ -23,6 +23,7 @@ int log2_(int N) {
 
 // Radix-2 FFT with recursion. Solution Works, but is quite space inefficient.
 // Requires N/2 recursive frames, creating arrays of length 1024 each instance.
+// USE THE DYNAMIC PROGRAMMING FFTs/IFFTs
 void FFT_r(double complex* x, double complex * X, int N) {
     // Allocate memory for split samples
     double complex x_e[max_N>>1];
@@ -52,7 +53,6 @@ void FFT_r(double complex* x, double complex * X, int N) {
         tw *= w;
     }
 }
-
 void IFFT_r(double complex* X, double complex* x, int N) {
         // Allocate memory for output FFT and split samples
     double complex X_e[max_N>>1];
@@ -190,6 +190,7 @@ void IFFTdp(double complex* x, double complex* X, int N) {
 void xcorr(double* x1, double* x2, double* X, int l1, int l2) {
     // come up with a solution with pointers so we don't need to create a zero padded array
     // we can do better
+    // we also only care for when the entire vector overlaps with other vector.
     double x3[MAX_BUFFER];
     int z = 0, L;
     double * a, * b;

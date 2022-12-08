@@ -8,5 +8,6 @@
             "binaryPath": "c:\\Users\\natha\\repos\\WRAP\\C\\complex",
             "binaryArgs": []
         }
-    ]
+    ],
+    "C_Cpp.errorSquiggles": "disabled"
 }

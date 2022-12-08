@@ -4,8 +4,10 @@
             "type": "cppbuild",
             "label": "C/C++: gcc.exe build active file",
             "command": "make",
+            "args": [
+            ],
             "options": {
-                "cwd": "C:\\msys64\\mingw64\\bin"
+                "cwd": "${fileDirname}"
             },
             "problemMatcher": "$gcc",
             "group": {
