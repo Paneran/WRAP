@@ -1,7 +1,7 @@
 //==========================================
 // Title:  Toolbox for WRAP MCU
 // Author: Nathan Pereira
-// Last Modified: December 7, 2022
+// Last Modified: December 8, 2022
 //==========================================
 #include <complex.h>
 #include <stdio.h>
@@ -9,7 +9,7 @@
 #define M_PI 3.1415926535897932384
 
 const int max_N = 2048;
-const int MAX_BUFFER = max_N*3 -2;
+const int MAX_BUFFER = max_N*2 -1;
 
 // log2 copied from Stack Overflow, by Leos313
 int log2_(int N) {
@@ -19,68 +19,6 @@ int log2_(int N) {
     i++;
   }
   return i - 1;
-}
-
-// Radix-2 FFT with recursion. Solution Works, but is quite space inefficient.
-// Requires N/2 recursive frames, creating arrays of length 1024 each instance.
-// USE THE DYNAMIC PROGRAMMING FFTs/IFFTs
-void FFT_r(double complex* x, double complex * X, int N) {
-    // Allocate memory for split samples
-    double complex x_e[max_N>>1];
-    double complex x_o[max_N>>1];
-    // even and odd sampling
-    for (int i = 0; i < (N>>1); i++) {
-        *(x_e + i) = *(x + 2*i);
-        *(x_o + i) = *(x + 2*i + 1);
-    }
-    // compute base case FFT
-    if (N==2) {
-        *X = *x_e + *x_o;
-        *(X+1) = *x_e - *x_o;
-        return;
-    }
-    // compute FFT of substage
-    double complex X_e[max_N>>1]; 
-    double complex X_o[max_N>>1]; 
-    FFT_r(x_e, X_e, N>>1);
-    FFT_r(x_o, X_o, N>>1);
-    // combine even and odd sampled FFTs to make whole FFT
-    double complex w = cexp(-I*2*M_PI/N);
-    double complex tw = 1;
-    for (int k = 0; k < (N>>1); k++) {
-        *(X + k) = *(X_e + k) + *(X_o + k) * tw;
-        *(X + (N>>1) + k) = *(X_e + k) - *(X_o + k) * tw;
-        tw *= w;
-    }
-}
-void IFFT_r(double complex* X, double complex* x, int N) {
-        // Allocate memory for output FFT and split samples
-    double complex X_e[max_N>>1];
-    double complex X_o[max_N>>1];
-    // even and odd sampling
-    for (int i = 0; i < (N>>1); i++) {
-        *(X_e + i) = *(X + 2*i);
-        *(X_o + i) = *(X + 2*i + 1);
-    }
-    // compute base case FFT
-    if (N==2) {
-        *x = (*X_e + *X_o)/2;
-        *(x+1) = (*X_e - *X_o)/2;
-        return;
-    }
-    // compute IFFT of substage
-    double complex x_e[max_N>>1];
-    double complex x_o[max_N>>1];
-    IFFT_r(X_e, x_e, N>>1);
-    IFFT_r(X_o, x_o, N>>1);
-    // combine even and odd sampled FFTs to make whole FFT
-    double complex w = cexp(I*2*M_PI/N);
-    double complex tw = 1;
-    for (int k = 0; k < (N>>1); k++) {
-        *(x + k) = (*(x_e + k) + *(x_o + k) * tw)/2;
-        *(x + (N>>1) + k) = (*(x_e + k) - *(x_o + k) * tw)/2;
-        tw *= w;
-    }
 }
 
 // Radix-2 FFT with dynamic programming. Space complexity N.
@@ -187,39 +125,36 @@ void IFFTdp(double complex* x, double complex* X, int N) {
 }
 
 // crosscorrelation function
-void xcorr(double* x1, double* x2, double* X, int l1, int l2) {
-    // come up with a solution with pointers so we don't need to create a zero padded array
-    // we can do better
-    // we also only care for when the entire vector overlaps with other vector.
-    double x3[MAX_BUFFER];
-    int z = 0, L;
-    double * a, * b;
-    if (l1 < l2) {
-        z = l1 - 1;
-        a = x2;
-        b = x1;
-        L = l2 + z<<1;
-    } else {
-        z = l2 - 1;
-        a = x1;
-        b = x2;
-        L = l1 + z<<1;
+void xcorr(double* x1, double* x2, double* X, int l1, int l2, int L) {
+    if (L < (l1 + l2 -1)) {
+        printf("WARNING: seg fault may occur. Make L=l1+l2-1\n");
+        L = l1 + l2 - 1;
+    } else if (L > (l1 + l2 - 1)) {
+        printf("WARNING: array size bigger than it needs to be. Make L=l1+l2-1\n");
+        L = l1 + l2 - 1;
     }
+    
+    double * a1 = x1 + l1 - 1, *a2 = x1 + l1 - 1, *b1 = x2, *b2 = x2;
 
     for (int i = 0; i < L; i++) {
         *(X + i) = 0;
-        if (i > z && i < L + z) {
-            *(x3 + i) = *(a+i);
-        } else {
-            *(x3 + i) = 0;
-        }
     }
-
-    z++;
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < z; j++) {
-            *(X + i) += *(x3 + i + j) * *(x2 + j);
+    int j;
+    double * a, * b;
+    for (int i = 1; i <= L; i++) {
+        j = 0;
+        while(1) {
+            a = a2 + j;
+            b = b1 + j;
+            *(X + i-1) += *a * *b;
+            if (a == a1 || b == b2)
+                break;
+            j++;
         }
+        (i>= l2) ? (a1--) : (0);
+        (i < l1) ? (a2--) : (0);
+        (i>= l1) ? (b1++) : (0);
+        (i < l2) ? (b2++) : (0);
     }
 }
 
