@@ -1,11 +1,13 @@
 #include <complex.h>
 #include <stdio.h>
 #include "tools.h"
-#define M_PI 3.1415926535897932384
 
+// testing program
 int main() {
-    int ft = 1;
+    int ft = 0;
     int cor = 0;
+    int cast = 1;
+    int fil = 0;
     if (cor) {
         double e[8] = {1, 2, 3, 4, 6, 9, 2, 4};
         double f[8] = {2, 3, 5, 7, 0, 2, 9, 5};
@@ -23,11 +25,10 @@ int main() {
         }
     }
     
-
     if (ft) {
-        double complex a[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-        double complex A[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-        double complex b[2] = {0, 1};
+        double a[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+        double complex A[8];
+        double b[2] = {0, 1};
         double complex B[2];
         double complex c[8]; 
         double complex d[8];
@@ -55,5 +56,25 @@ int main() {
         for (int i = 0; i < 2; i++) {
             printf("values of complex number: %.2lf+%.2lfi\n", creal(*(d+i)), cimag(*(d+i)));
         }
+    }
+
+    if (cast) {
+        double a[3] = {3, 2, 7};
+        double complex a_[3];
+        double2complex(a, a_, 3);
+        printf("a_:\n");
+        for (int i = 0; i < 3; i++) {
+            printf("values of complex number: %.2lf+%.2lfi\n", creal(*(a_+i)), cimag(*(a_+i)));
+        }
+        double b[3];
+        complex2double(a_, b, 3);
+        printf("b:\n");
+        for (int i = 0; i < 3; i++) {
+            printf("values of complex number: %.2lf\n", *(b+i));
+        }
+    }
+
+    if (fil) {
+
     }
 }
