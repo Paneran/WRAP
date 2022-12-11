@@ -25,6 +25,11 @@ int log2_(int N) {
 // Radix-2 FFT with dynamic programming. Space complexity N.
 // would it be worth it to make space NlogN to cut computation time in half?
 void FFTdp(double * x, double complex* X, int N) {
+    if (floor(log2(N)) != log2(N)) {
+        printf("WARNING: N must be a power of 2. it is %i\n", N);
+        return; 
+    }
+
     // allocate memory
     double complex X_e[max_N>>1];
     double complex X_o[max_N>>1];
@@ -76,6 +81,10 @@ void FFTdp(double * x, double complex* X, int N) {
 
 // FFTdp and IFFTdp are nearly identical and easy to make one func
 void IFFTdp(double complex* x, double complex* X, int N) {
+    if (floor(log2(N)) != log2(N)) {
+        printf("WARNING: N must be a power of 2. it is %i\n", N);
+        return; 
+    }
     // allocate memory
     double complex X_e[max_N>>1];
     double complex X_o[max_N>>1];
@@ -190,7 +199,7 @@ int zeropad(double * a, double * b, int l1, int l2) {
     int L = l1 + l2 - 1;
     int k = ceil(log2(L));
     int i = 0;
-    for (; (i < L && log2_(i+1) != k); i++) {
+    for (; (i < L || log2(i+1) != k); i++) {
         if (i < L) {
             b[i] = a[i];
         } else {
@@ -199,14 +208,15 @@ int zeropad(double * a, double * b, int l1, int l2) {
     }
     return i + 1;
 }
+
 void multiply_c(complex double *a, complex double *b, complex double *c, int L) {
-    for (int i = 0; i < L; i++) {\
+    for (int i = 0; i < L; i++) {
         c[i] = a[i] * b[i];
     }
 }
 
 void multiply(double *a, double *b, double *c, int L) {
-    for (int i = 0; i < L; i++) {\
+    for (int i = 0; i < L; i++) {
         c[i] = a[i] * b[i];
     }
 }
@@ -215,15 +225,15 @@ void multiply(double *a, double *b, double *c, int L) {
 // performs a linear convolution and stores the first l1 results back in a
 // have MATLAB generate the filters. 
 void filter(double * a, double * b, int l1, int l2) {
+    // could set a better upperbound/ design these functions s.t. no need for temp arrays
     double complex A[max_N];
     double complex B[max_N];
     double complex C[max_N];
-    double a_[max_N];
-    double b_[max_N];
-    int L = zeropad(a, a_, l1, l2);
-    FFTdp(a_, A, L);
-    zeropad(b, b_, l1, l2);
-    FFTdp(b_, B, L);
+    double temp[max_N];
+    int L = zeropad(a, temp, l1, l2);
+    FFTdp(temp, A, L);
+    zeropad(b, temp, l1, l2);
+    FFTdp(temp, B, L);
     multiply_c(A, B, C, L);
     IFFTdp(C, A, L);
     complex2double(A, a, l1);

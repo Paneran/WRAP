@@ -6,8 +6,8 @@
 int main() {
     int ft = 0;
     int cor = 0;
-    int cast = 1;
-    int fil = 0;
+    int cast = 0;
+    int fil = 1;
     if (cor) {
         double e[8] = {1, 2, 3, 4, 6, 9, 2, 4};
         double f[8] = {2, 3, 5, 7, 0, 2, 9, 5};
@@ -75,6 +75,14 @@ int main() {
     }
 
     if (fil) {
-
+        // fifth order low pass filter. generated with firpm
+        // f = [0 0.2 0.25 1], a = [1, 1, 0, 0]: firpm(5, f, a)
+        double lp[6] = {0.2630, 0.1926, 0.2207, 0.2207, 0.1926, 0.2630};
+        double x[6] = {1, 1, 1, 1, 1, 1};
+        double ans[6] = {0.2630, 0.4556, 0.6763, 0.8970, 1.0896, 1.3526};
+        filter(x, lp, 6, 6);
+        for (int i = 0; i < 6; i++) {
+            printf("values of complex number: %.4lf\n", *(x+i));
+        }
     }
 }
