@@ -45,14 +45,14 @@ lp = firpm(order, f, a);
 integrator = 0;
 
 kp = 10;
-ki = 0.01;gfg
+ki = 0.01;
 
 for i = order+1:N
     c = 2*cos(2*pi*f0*t(i)+ph(i));
     s = -2*sin(2*pi*f0*t(i)+ph(i));
     % demodulate the signal by mixing with NCO signals
     inph_(i) = y(i) * c;
-    quad_(i)  = y(i) * s;
+    quad_(i) = y(i) * s;
     % low pass filter to get rid of high frequency components
     inph(i-order:i) = filter(lp, 1, inph_(i-order:i));
     quad(i-order:i)  = filter(lp, 1, quad_(i-order:i));
