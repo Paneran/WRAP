@@ -80,7 +80,7 @@ title("Phase Tracker")
 
 span = 5;
 sps = 100;
-srrc = rcosdesign(0.5, span, sps, 'sqrt');
+srrc = rcosdesign(1, span, sps, 'sqrt');
 l = inph+j*quad;
 l = upfirdn(l, srrc,1,1);
 l = l(length(srrc)/2+0.5:end-length(srrc)/2+0.5);

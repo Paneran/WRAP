@@ -1,8 +1,12 @@
 clear all;
 close all;
+%==========================================
+% Title:  Link Simulation
+% Authors: David Zheng & Nathan Pereira
+% Last Modified: December 10, 2022
+%==========================================
 % This version of the code modulates and demodulates the signal.
-% The packet header is found. No phase correction or finding of 
-% the frequency is done.
+% The packet header is found. 
 %%
 Fs = 5000000;             % Sampling rate
 N  = 300000;               % Number of points sampled
@@ -11,6 +15,7 @@ Rs = 50000;               % Symbol rate in symbols/sec (baud)
 Ns = Rs * Tmax;           % Number of symbols to send
 sps = Fs / Rs;            % Number of samples per symbol
 fc = 1e6;             % Carrier frequency in Hz
+B = 350000;         % Bandwidth
 
 % for plotting
 t = linspace(0, Tmax - 1/Fs, N); % Time variable
@@ -18,7 +23,7 @@ f = linspace(-Fs/2,Fs/2, N);        % Frequency variable
 
 % RRC setup
 span = 5;           % number of symbols to truncate RRC
-rolloff = 0.5;      % parameter of RRC
+rolloff = 0;      % parameter of RRC
 RRC = rcosdesign(rolloff, span, sps, 'sqrt');
 
 %% Symbol Generation
@@ -73,18 +78,18 @@ plot(t, Tx);
 std = 0.05;
 noise = std * randn(1,N);
 Rx = Tx + noise;
-phase = 0; %unifrnd(0, 2*pi);
+phase = unifrnd(0, 2*pi);
 Rx = real(Rx*exp(1i*phase));
 
 p1 = (2*pi+1j*2*pi*40);
 s = tf('s');
-Hc = 1/(s^2/p1+1);
+Hc = B*s/(s^2 + s*B + fc^2);
 Hd = c2d(Hc, 1/Fs, 'tustin');
 [a, b] = tfdata(Hd);
 
 y = real(filter(a{:}, b{:}, Rx));
 % this shit aint working with this band limiting channel filter. 
-y = Rx;
+%y = Rx;
 
 t = 0:1/Fs:Tmax-1/Fs;
 % use costas loop to demodulate
@@ -103,8 +108,9 @@ a = [1, 1, 0, 0];
 order = 5;
 lp = firpm(order, f, a);
 integrator = 0;
-kp = 10;
-ki = 0.01;
+%300 7 close
+kp = 300;
+ki = 7;
 
 for i = order+1:N
     c = 2*cos(2*pi*f0*t(i)+ph(i));
