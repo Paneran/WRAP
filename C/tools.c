@@ -177,9 +177,6 @@ void xcorr(double* x1, double* x2, double* X, int l1, int l2, int L) {
     }
 }
 
-// BELOW NOT TESTED
-// NEED TO VALIDATE
-
 void complex2double(double complex* a, double * b, int L) {
     for (int i = 0; i < L; i++) {
         b[i] = creal(a[i]);
@@ -220,6 +217,7 @@ void multiply(double *a, double *b, double *c, int L) {
         c[i] = a[i] * b[i];
     }
 }
+
 // filter takes "a" and modifies it with b
 // also must be of length 2^k where k is an integer
 // performs a linear convolution and stores the first l1 results back in a
@@ -238,3 +236,25 @@ void filter(double * a, double * b, int l1, int l2) {
     IFFTdp(C, A, L);
     complex2double(A, a, l1);
 }
+
+// regular linear convolution
+void conv(double * x1, double * x2, double * X, int l1, int l2, int L) {
+    if (L < (l1 + l2 -1)) {
+        printf("WARNING: seg fault may occur. Make L=l1+l2-1\n");
+        L = l1 + l2 - 1;
+    } else if (L > (l1 + l2 - 1)) {
+        printf("WARNING: array size bigger than it needs to be. Make L=l1+l2-1\n");
+        L = l1 + l2 - 1;
+    }
+    double complex A[max_N];
+    double complex B[max_N];
+    double complex C[max_N];
+    double temp[max_N];
+    zeropad(x1, temp, l1, l2);
+    FFTdp(temp, A, L);
+    zeropad(x2, temp, l1, l2);
+    FFTdp(temp, B, L);
+    multiply_c(A, B, C, L);
+    IFFTdp(C, A, L);
+    complex2double(A, X, L);
+} 
