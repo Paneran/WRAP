@@ -81,7 +81,6 @@ Rx = Tx + noise;
 phase = unifrnd(0, 2*pi);
 Rx = real(Rx*exp(1i*phase));
 
-p1 = (2*pi+1j*2*pi*40);
 s = tf('s');
 Hc = B*s/(s^2 + s*B + fc^2);
 Hd = c2d(Hc, 1/Fs, 'tustin');
@@ -93,8 +92,8 @@ y = real(filter(a{:}, b{:}, Rx));
 
 t = 0:1/Fs:Tmax-1/Fs;
 % use costas loop to demodulate
-% works from ~9.767e5-9.97e5
-f0 = 0.95e6; % estimated frequency
+% works from ~0.95e6-1.05e6
+f0 = 1.05e6; % estimated frequency
 ph = zeros(1, N+1);
 inph = zeros(1, N);
 quad = zeros(1, N);
