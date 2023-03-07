@@ -71,7 +71,6 @@ symbol_wave = symbol_wave(length(RRC)/2+0.5:end-length(RRC)/2+0.5);
 comp_carr = exp(1i*2*pi*fc*t);
 analytic_sig = symbol_wave .* comp_carr;
 Tx = real(analytic_sig);
-
 plot(t, Tx);
 
 %% Noise and Band Limited Channel
@@ -90,6 +89,7 @@ y = real(filter(a{:}, b{:}, Rx));
 % this shit aint working with this band limiting channel filter. 
 %y = Rx;
 
+y = y/(mean(abs(y)))/10;
 t = 0:1/Fs:Tmax-1/Fs;
 % use costas loop to demodulate
 % works from ~0.95e6-1.05e6
@@ -102,14 +102,14 @@ quad_ = zeros(1, N);
 err = zeros(1, N);
 % nyquist rate: Fs/2=2500000
 % create lowpass as percent of this
-f = [0, 0.2, 0.25, 1];
+f = [0, 0.1, 0.15, 1];
 a = [1, 1, 0, 0];
 order = 5;
 lp = firpm(order, f, a);
 integrator = 0;
-%300 7 close
-kp = 300;
-ki = 7;
+%300 6 close
+kp = 9.5;
+ki = 0.1;
 
 for i = order+1:N
     c = 2*cos(2*pi*f0*t(i)+ph(i));
@@ -118,8 +118,10 @@ for i = order+1:N
     inph_(i) = y(i) * c;
     quad_(i) = y(i) * s;
     % low pass filter to get rid of high frequency components
-    inph(i-order:i) = filter(lp, 1, inph_(i-order:i));
-    quad(i-order:i) = filter(lp, 1, quad_(i-order:i));
+    I = filter(lp, 1, inph_(i-order:i));
+    Q = filter(lp, 1, quad_(i-order:i));
+    inph(i) = I(end);
+    quad(i) = Q(end);
 
     % mix in_ph and quad to get error signal
     err(i) = inph(i)*quad(i);
@@ -137,9 +139,10 @@ title("Error Plot");
 figure();
 plot(1:N+1, ph)
 title("Phase Tracker")
+A = [1:N+1; ones(length(ph), 1)'];
+x = A'\ph';
 
 % SRRC
-
 span = 5;
 sps = 100;
 srrc = rcosdesign(0.5, span, sps, 'sqrt');
