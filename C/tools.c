@@ -18,7 +18,7 @@ Radix-2 FFT with dynamic programming. Space complexity N.
 Params:
 x1: array to take FFT
 X : output array
-N: length of input array
+N: length of input array. Must be a power of 2.
 */
 void FFT(double * x, double complex* X, int N) {
     int p = log2(N);
@@ -75,13 +75,13 @@ void FFT(double * x, double complex* X, int N) {
     } 
 }
 
-// FFTdp and IFFTdp are nearly identical and easy to make one func
+// FFT and IFFT are nearly identical and easy to make one func
 /* 
 Computes IFFT
 Params:
 x1: array to take IFFT
 X : output array
-N: length of input array
+N: length of input array. Must be a power of 2. 
 */
 void IFFT(double complex* x, double complex* X, int N) {
     int p = log2(N);
@@ -230,8 +230,8 @@ int zeropad(double * x1, double * X, int l1, int l2) {
     int L = l1 + l2 - 1;
     int k = ceil(log2(L));
     int i = 0;
-    for (; (i < L || log2(i+1) != k); i++) {
-        if (i < L) {
+    for (; (i < 1<<k); i++) {
+        if (i < l1) {
             X[i] = x1[i];
         } else {
             X[i] = 0;
@@ -280,6 +280,7 @@ x1: array 1 to filter
 x2: array 2 to filter
 l1: length of array 1
 l2: length of array 2
+output is stored in x1
 */
 void filter(double * x1, double * x2, int l1, int l2) {
     // could set a better upperbound/ design these functions s.t. no need for temp arrays
@@ -288,12 +289,12 @@ void filter(double * x1, double * x2, int l1, int l2) {
     double complex C[max_N];
     double temp[max_N];
     int L = zeropad(x1, temp, l1, l2);
-    FFTdp(temp, A, L);
+    FFT(temp, A, L);
     zeropad(x2, temp, l1, l2);
-    FFTdp(temp, B, L);
+    FFT(temp, B, L);
     multiply_c(A, B, C, L);
-    IFFTdp(C, A, L);
-    complex2double(A, a, l1);
+    IFFT(C, A, L);
+    complex2double(A, x1, l1);
 }
 
 
@@ -315,15 +316,18 @@ void conv(double * x1, double * x2, double * X, int l1, int l2, int L) {
         printf("WARNING: array size bigger than it needs to be. Make L=l1+l2-1\n");
         L = l1 + l2 - 1;
     }
+    
+    int N = 1<<((int) ceil(log2(L)));
+    printf("%i\n", N);
     double complex A[max_N];
     double complex B[max_N];
     double complex C[max_N];
     double temp[max_N];
     zeropad(x1, temp, l1, l2);
-    FFTdp(temp, A, L);
-    zeropad(x2, temp, l1, l2);
-    FFTdp(temp, B, L);
-    multiply_c(A, B, C, L);
-    IFFTdp(C, A, L);
+    FFT(temp, A, N);
+    zeropad(x2, temp, l2, l1);
+    FFT(temp, B, N);
+    multiply_c(A, B, C, N);
+    IFFT(C, A, N);
     complex2double(A, X, L);
 } 

@@ -7,7 +7,8 @@ int main() {
     int ft = 0;
     int cor = 0;
     int cast = 0;
-    int fil = 1;
+    int fil = 0;
+    int con = 1;
     if (cor) {
         double e[8] = {1, 2, 3, 4, 6, 9, 2, 4};
         double f[8] = {2, 3, 5, 7, 0, 2, 9, 5};
@@ -33,10 +34,10 @@ int main() {
         double complex c[8]; 
         double complex d[8];
 
-        FFTdp(a, A, 8);
-        FFTdp(b, B, 2); 
-        IFFTdp(A, c, 8);
-        IFFTdp(B, d, 2);
+        FFT(a, A, 8);
+        FFT(b, B, 2); 
+        IFFT(A, c, 8);
+        IFFT(B, d, 2);
 
         printf("A:\n");
         for (int i = 0; i < 8; i++) {
@@ -84,5 +85,17 @@ int main() {
         for (int i = 0; i < 6; i++) {
             printf("values of complex number: %.4lf\n", *(x+i));
         }
+    }
+
+    if (con) {
+        double e[7] = {1, 2, 3, 4, 6, 9, 2};
+        double f[8] = {2, 3, 5, 7, 0, 2, 9, 5};
+        double g[14];
+        
+        conv(e, f, g, 7, 8, 14);
+        for (int i = 0; i < 14; i++) {
+            printf("%f ", *(g+i));
+        }
+        printf("\n");
     }
 }
