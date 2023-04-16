@@ -10,23 +10,20 @@
 
 // ensure to set max_N to your max packet size. 
 // keep this as a power of 2. 
-const int max_N = 2048;
+#define max_N 2048
 
-// log2 copied from Stack Overflow, by Leos313
-int log2_(int N) {
-  int k = N, i = 0;
-  while(k) {
-    k >>= 1;
-    i++;
-  }
-  return i - 1;
-}
-
-// Radix-2 FFT with dynamic programming. Space complexity N.
 // would it be worth it to make space NlogN to cut computation time in half?
-void FFTdp(double * x, double complex* X, int N) {
-    if (floor(log2(N)) != log2(N)) {
-        printf("WARNING: N must be a power of 2. it is %i\n", N);
+/* 
+Radix-2 FFT with dynamic programming. Space complexity N.
+Params:
+x1: array to take FFT
+X : output array
+N: length of input array
+*/
+void FFT(double * x, double complex* X, int N) {
+    int p = log2(N);
+    if (floor(p) != p) {
+        printf("WARNING: N must be a power of 2. Zero Pad first. it is %i\n", N);
         return; 
     }
 
@@ -39,7 +36,6 @@ void FFTdp(double * x, double complex* X, int N) {
     }
     
     // decompose x into its 2 point pairs for DFT. O(N log(N))
-    int p = log2_(N);
     // Outside loop O(log(N))
     for (int i = 0; i < p; i++) {
         // two for loops below O(N) time
@@ -80,8 +76,16 @@ void FFTdp(double * x, double complex* X, int N) {
 }
 
 // FFTdp and IFFTdp are nearly identical and easy to make one func
-void IFFTdp(double complex* x, double complex* X, int N) {
-    if (floor(log2(N)) != log2(N)) {
+/* 
+Computes IFFT
+Params:
+x1: array to take IFFT
+X : output array
+N: length of input array
+*/
+void IFFT(double complex* x, double complex* X, int N) {
+    int p = log2(N);
+    if (floor(p) != p) {
         printf("WARNING: N must be a power of 2. it is %i\n", N);
         return; 
     }
@@ -94,7 +98,6 @@ void IFFTdp(double complex* x, double complex* X, int N) {
     }
     
     // decompose x into its 2 point pairs for IDFT. O(N log(N))
-    int p = log2_(N);
     // Outside loop O(log(N))
     for (int i = 0; i < p; i++) {
         // two for loops below O(N) time
@@ -138,7 +141,16 @@ void IFFTdp(double complex* x, double complex* X, int N) {
     }
 }
 
-// crosscorrelation function
+/* 
+crosscorrelation function
+Params:
+x1: array 1 to correlate
+x2: array 2 to correlate
+X : output array
+l1: length of array 1
+l2: length of array 2
+L : length of array X
+*/
 void xcorr(double* x1, double* x2, double* X, int l1, int l2, int L) {
     // preliminary warnings on output sizing. 
     if (L < (l1 + l2 -1)) {
@@ -177,67 +189,124 @@ void xcorr(double* x1, double* x2, double* X, int l1, int l2, int L) {
     }
 }
 
-void complex2double(double complex* a, double * b, int L) {
+/* 
+Convert complex array to double. Takes real component.
+Params:
+x1: array 1 to cast
+X : output array
+L : length of all arrays
+*/
+void complex2double(double complex* x1, double * X, int L) {
     for (int i = 0; i < L; i++) {
-        b[i] = creal(a[i]);
+        X[i] = creal(x1[i]);
     }
 }
 
-void double2complex(double * a, double complex * b, int L) {
+/* 
+Convert double array to complex
+Params:
+x1: array 1 to cast
+X : output array
+L : length of all arrays
+*/
+void double2complex(double * x1, double complex * X, int L) {
     for (int i = 0; i < L; i++) {
-        b[i] = a[i];
+        X[i] = x1[i];
     }
 }
 
-// Pads >= l1 + l2 - 1 and to the nearest power of 2. 
-// if just want regular zero padding to power of 2, set l2 = 1
-// returns final size. 
-int zeropad(double * a, double * b, int l1, int l2) {
+/* 
+Zeropads arrays to the nearest power of 2.
+Pads >= l1 + l2 - 1 and to the nearest power of 2. 
+if just want regular zero padding to power of 2, set l2 = 1
+returns final size. 
+Params:
+x1: array to zeropad
+X : output array
+l1: length of input array
+l2: length of another array(not passed in), which array should be padded to
+*/
+int zeropad(double * x1, double * X, int l1, int l2) {
     int L = l1 + l2 - 1;
     int k = ceil(log2(L));
     int i = 0;
     for (; (i < L || log2(i+1) != k); i++) {
         if (i < L) {
-            b[i] = a[i];
+            X[i] = x1[i];
         } else {
-            b[i] = 0;
+            X[i] = 0;
         }
     }
     return i + 1;
 }
 
-void multiply_c(complex double *a, complex double *b, complex double *c, int L) {
+/* 
+Multiply complex double arrays together
+Params:
+x1: array 1 to multiply
+x2: array 2 to multiply
+X : output array
+L : length of all arrays
+*/
+void multiply_c(double complex *a, double complex *b, double complex *c, int L) {
     for (int i = 0; i < L; i++) {
         c[i] = a[i] * b[i];
     }
 }
 
-void multiply(double *a, double *b, double *c, int L) {
+
+/* 
+Multiply double arrays together
+Params:
+x1: array 1 to multiply
+x2: array 2 to multiply
+X : output array
+L : length of all arrays
+*/
+void multiply(double *x1, double *x2, double *X, int L) {
     for (int i = 0; i < L; i++) {
-        c[i] = a[i] * b[i];
+        X[i] = x1[i] * x2[i];
     }
 }
 
-// filter takes "a" and modifies it with b
-// also must be of length 2^k where k is an integer
-// performs a linear convolution and stores the first l1 results back in a
-// have MATLAB generate the filters. 
-void filter(double * a, double * b, int l1, int l2) {
+
+/* 
+filter takes "a" and modifies it with b
+also must be of length 2^k where k is an integer
+performs a linear convolution and stores the first l1 results back in a
+have MATLAB generate the filters. 
+Params:
+x1: array 1 to filter
+x2: array 2 to filter
+l1: length of array 1
+l2: length of array 2
+*/
+void filter(double * x1, double * x2, int l1, int l2) {
     // could set a better upperbound/ design these functions s.t. no need for temp arrays
     double complex A[max_N];
     double complex B[max_N];
     double complex C[max_N];
     double temp[max_N];
-    int L = zeropad(a, temp, l1, l2);
+    int L = zeropad(x1, temp, l1, l2);
     FFTdp(temp, A, L);
-    zeropad(b, temp, l1, l2);
+    zeropad(x2, temp, l1, l2);
     FFTdp(temp, B, L);
     multiply_c(A, B, C, L);
     IFFTdp(C, A, L);
     complex2double(A, a, l1);
 }
 
-// regular linear convolution
+
+/* 
+regular linear convolution
+Params:
+x1: array 1 to convolve
+x2: array 2 to convolve
+X : output array
+l1: length of array 1
+l2: length of array 2
+L : length of array X
+*/
 void conv(double * x1, double * x2, double * X, int l1, int l2, int L) {
     if (L < (l1 + l2 -1)) {
         printf("WARNING: seg fault may occur. Make L=l1+l2-1\n");
