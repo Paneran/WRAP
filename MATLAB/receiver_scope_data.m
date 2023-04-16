@@ -135,8 +135,8 @@ for k = 1:N-1
   prev_acc = phase_acc;
   phase_acc = phase_acc + 2*pi/freq;
 end
-hold on;
-plot (real_samp);
+
+stem (real_samp);
 plot(quad_samp);
 selected = real_samp +j*quad_samp;
 legend("Real sampled", "Imaginary sampled");

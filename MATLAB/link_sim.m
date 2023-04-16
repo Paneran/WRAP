@@ -29,6 +29,17 @@ RRC = rcosdesign(rolloff, span, sps, 'sqrt');
 %% Symbol Generation
 % Generate random set of bits
 bits_per_packet = 256;
+
+bits = [0 1 0 0 0 0 1 1 0 1 1 0 1 1 1 1 0 1 1 0 1 1 1 0 0 1 1 0 0 1 1 1 0 1,...
+        1 1 0 0 1 0 0 1 1 0 0 0 0 1 0 1 1 1 0 1 0 0 0 1 1 1 0 0 1 1 0 0 1 0,...
+        0 0 0 1 0 0 1 0 0 0 0 0 0 1 0 1 0 0 1 1 0 1 1 0 1 0 0 1 0 1 1 0 1 1,...
+        0 1 0 1 1 1 0 1 0 1 0 1 1 0 1 1 0 0 0 1 1 0 0 0 0 1 0 1 1 1 0 1 0 0,...
+        0 1 1 0 1 0 0 1 0 1 1 0 1 1 1 1 0 1 1 0 1 1 1 0 0 0 1 0 0 0 0 0 0 1,...
+        1 0 1 0 0 1 0 1 1 1 0 0 1 1 0 0 1 0 0 0 0 0 0 1 1 0 0 0 1 1 0 1 1 0,...
+        1 1 1 1 0 1 1 0 1 1 0 1 0 1 1 1 0 0 0 0 0 1 1 0 1 1 0 0 0 1 1 0 0 1,...
+        0 1 0 1 1 1 0 1 0 0 0 1 1 0 0 1 0 1];
+
+%{
 bits = [0  1  0  0  1  0  0  1  0  0  1  0  0  0  0  0  0  1  1  0  0  1  0,...
         0  0  1  1  0  1  1  1  1  0  1  1  0  1  1  1  0  0  0  1  0  0  1,...
         1  1  0  1  1  1  0  1  0  0  0  0  1  0  0  0  0  0  0  1  1  0  1,...
@@ -41,7 +52,7 @@ bits = [0  1  0  0  1  0  0  1  0  0  1  0  0  0  0  0  0  1  1  0  0  1  0,...
         1  0  1  1  0  0  1  1  1  0  1  1  0  0  1  1  1  0  1  1  0  0  1,...
         0  1  0  1  1  1  0  0  1  0  0  1  1  1  0  1  0  0  0  0  1  0  0,...
         0  0  1];
-
+%}
 % Map bits to BPSK symbols
 symbs = 2 * (bits - 0.5);
 
@@ -67,11 +78,12 @@ deltas = upsample(samples,sps);
 symbol_wave = upfirdn(deltas, RRC, 1, 1);
 symbol_wave = symbol_wave(length(RRC)/2+0.5:end-length(RRC)/2+0.5);
 
+
 %% Carrier Modulation
 comp_carr = exp(1i*2*pi*fc*t);
 analytic_sig = symbol_wave .* comp_carr;
-Tx = real(analytic_sig);
-plot(t, Tx);
+phase = unifrnd(0, 2*pi);
+Tx = real(analytic_sig*exp(1i*phase));
 
 %% Noise and Band Limited Channel
 std = 0.05;
@@ -84,16 +96,18 @@ s = tf('s');
 Hc = B*s/(s^2 + s*B + fc^2);
 Hd = c2d(Hc, 1/Fs, 'tustin');
 [a, b] = tfdata(Hd);
-
+  
 y = real(filter(a{:}, b{:}, Rx));
-% this shit aint working with this band limiting channel filter. 
-%y = Rx;
+
+figure()
+plot(t(10000:11000), y(10000:11000));
 
 y = y/(mean(abs(y)))/10;
 t = 0:1/Fs:Tmax-1/Fs;
 % use costas loop to demodulate
 % works from ~0.95e6-1.05e6
-f0 = 1.05e6; % estimated frequency
+df = -1e4;
+f0 = fc+df; %1.05e6; % estimated frequency
 ph = zeros(1, N+1);
 inph = zeros(1, N);
 quad = zeros(1, N);
@@ -108,7 +122,7 @@ order = 5;
 lp = firpm(order, f, a);
 integrator = 0;
 %300 6 close
-kp = 9.5;
+kp = 10;
 ki = 0.1;
 
 for i = order+1:N
@@ -130,6 +144,8 @@ for i = order+1:N
     integrator = integrator + ki * err(i);
     ph(i+1) = ph(i)+kp*err(i)+integrator;
 end
+figure()
+scatter(inph, quad)
 inph(end-5:end)=zeros(1, 6);
 quad(end-5:end)=zeros(1, 6);
 figure();
@@ -230,3 +246,4 @@ end
 received = bits_received(shift+1:shift+256);
 strarr = int2str(received);
 disp(strarr);
+
