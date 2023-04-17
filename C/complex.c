@@ -91,9 +91,10 @@ int main() {
         double e[7] = {1, 2, 3, 4, 6, 9, 2};
         double f[8] = {2, 3, 5, 7, 0, 2, 9, 5};
         double g[14];
-        
+        printf("hi");
         conv(e, f, g, 7, 8, 14);
         for (int i = 0; i < 14; i++) {
+            printf("hi");
             printf("%f ", *(g+i));
         }
         printf("\n");

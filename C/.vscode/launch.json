@@ -9,11 +9,12 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/complex.exe",
-            "args": [],
+            "args": ["-fdiagnostics-color=always", "-g"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
             "externalConsole": false,
+            "miDebuggerPath": "C:/mingw/bin/gdb.exe",
             "setupCommands": [
                 {
                     "preLaunchTask": "C/C++: gcc.exe build active file",

@@ -20,13 +20,12 @@ x1: array to take FFT
 X : output array
 N: length of input array. Must be a power of 2.
 */
-void FFT(double * x, double complex* X, int N) {
+void FFT(const double * x, double complex* X, const int N) {
     int p = log2(N);
     if (floor(p) != p) {
         printf("WARNING: N must be a power of 2. Zero Pad first. it is %i\n", N);
         return; 
     }
-
     // allocate memory
     double complex X_e[max_N>>1];
     double complex X_o[max_N>>1];
@@ -52,7 +51,6 @@ void FFT(double * x, double complex* X, int N) {
             }    
         }
     }
-    
     // put together the 2 point FFT pairs to make whole FFT. O(N log(N)) 
     double complex w, tw;
     for (int i = 0; i < p; i++) {
@@ -83,7 +81,7 @@ x1: array to take IFFT
 X : output array
 N: length of input array. Must be a power of 2. 
 */
-void IFFT(double complex* x, double complex* X, int N) {
+void IFFT(const double complex* x, double complex* X, const int N) {
     int p = log2(N);
     if (floor(p) != p) {
         printf("WARNING: N must be a power of 2. it is %i\n", N);
@@ -151,14 +149,11 @@ l1: length of array 1
 l2: length of array 2
 L : length of array X
 */
-void xcorr(double* x1, double* x2, double* X, int l1, int l2, int L) {
+void xcorr(double* x1, double* x2, double* X, const int l1, const int l2, const int L) {
     // preliminary warnings on output sizing. 
-    if (L < (l1 + l2 -1)) {
-        printf("WARNING: seg fault may occur. Make L=l1+l2-1\n");
-        L = l1 + l2 - 1;
-    } else if (L > (l1 + l2 - 1)) {
-        printf("WARNING: array size bigger than it needs to be. Make L=l1+l2-1\n");
-        L = l1 + l2 - 1;
+    if (L != (l1 + l2 -1)) {
+        printf("WARNING: Make L=l1+l2-1. Op Cancelled.\n");
+        return;
     }
     
     // set initial pointer positions of what values in each vector should be considered
@@ -196,7 +191,7 @@ x1: array 1 to cast
 X : output array
 L : length of all arrays
 */
-void complex2double(double complex* x1, double * X, int L) {
+void complex2double(const double complex* x1, double * X, const int L) {
     for (int i = 0; i < L; i++) {
         X[i] = creal(x1[i]);
     }
@@ -209,7 +204,7 @@ x1: array 1 to cast
 X : output array
 L : length of all arrays
 */
-void double2complex(double * x1, double complex * X, int L) {
+void double2complex(const double * x1, double complex * X, const int L) {
     for (int i = 0; i < L; i++) {
         X[i] = x1[i];
     }
@@ -226,7 +221,7 @@ X : output array
 l1: length of input array
 l2: length of another array(not passed in), which array should be padded to
 */
-int zeropad(double * x1, double * X, int l1, int l2) {
+int zeropad(const double * x1, double * X, const int l1, const int l2) {
     int L = l1 + l2 - 1;
     int k = ceil(log2(L));
     int i = 0;
@@ -248,7 +243,7 @@ x2: array 2 to multiply
 X : output array
 L : length of all arrays
 */
-void multiply_c(double complex *a, double complex *b, double complex *c, int L) {
+void multiply_c(const double complex *a, const double complex *b, double complex *c, int L) {
     for (int i = 0; i < L; i++) {
         c[i] = a[i] * b[i];
     }
@@ -263,7 +258,7 @@ x2: array 2 to multiply
 X : output array
 L : length of all arrays
 */
-void multiply(double *x1, double *x2, double *X, int L) {
+void multiply(const double *x1, const double *x2, double *X, int L) {
     for (int i = 0; i < L; i++) {
         X[i] = x1[i] * x2[i];
     }
@@ -282,7 +277,7 @@ l1: length of array 1
 l2: length of array 2
 output is stored in x1
 */
-void filter(double * x1, double * x2, int l1, int l2) {
+void filter(double * x1, const double * x2, const int l1, const int l2) {
     // could set a better upperbound/ design these functions s.t. no need for temp arrays
     double complex A[max_N];
     double complex B[max_N];
@@ -308,22 +303,18 @@ l1: length of array 1
 l2: length of array 2
 L : length of array X
 */
-void conv(double * x1, double * x2, double * X, int l1, int l2, int L) {
-    if (L < (l1 + l2 -1)) {
-        printf("WARNING: seg fault may occur. Make L=l1+l2-1\n");
-        L = l1 + l2 - 1;
-    } else if (L > (l1 + l2 - 1)) {
-        printf("WARNING: array size bigger than it needs to be. Make L=l1+l2-1\n");
-        L = l1 + l2 - 1;
+void conv(const double * x1, const double * x2, double * X, const int l1, const int l2, const int L) {
+    if (L != (l1 + l2 -1)) {
+        printf("WARNING: Make L=l1+l2-1. Op Cancelled.\n");
+        return;
     }
-    
     int N = 1<<((int) ceil(log2(L)));
-    printf("%i\n", N);
     double complex A[max_N];
     double complex B[max_N];
     double complex C[max_N];
     double temp[max_N];
     zeropad(x1, temp, l1, l2);
+    // failing at FFT for some reason
     FFT(temp, A, N);
     zeropad(x2, temp, l2, l1);
     FFT(temp, B, N);

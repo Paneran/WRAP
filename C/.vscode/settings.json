@@ -2,7 +2,10 @@
     "files.associations": {
         "complex.h": "c",
         "cmath": "c",
-        "complex": "c"
+        "complex": "c",
+        "stdio.h": "c",
+        "stdint.h": "c",
+        "stdlib.h": "c"
     },
     "makefile.launchConfigurations": [
         {
