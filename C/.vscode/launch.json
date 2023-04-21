@@ -8,7 +8,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/complex.exe",
+            "program": "${workspaceFolder}",
             "args": ["-fdiagnostics-color=always", "-g"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",

@@ -1,13 +1,17 @@
-#include <complex.h>
-#include <stdio.h>
 #include <stdint.h>
 #include "tools.h"
 
 #define RRC_len 101
-#define N 8
-#define sps 20
+#define N 301
+#define sps 100
 
-const double RRC[RRC_len] = {0.0290581511866829,0.0292861195166709,0.0287874417058172,0.0275436194555175,0.0255527588425467,0.0228302397253860,0.0194090371891105,0.0153396797427319,
+struct parameters_t {
+    float phase;
+};
+
+const float F = 1;
+
+const float RRC[RRC_len] = {0.0290581511866829,0.0292861195166709,0.0287874417058172,0.0275436194555175,0.0255527588425467,0.0228302397253860,0.0194090371891105,0.0153396797427319,
                              0.0106898363592876,0.00554353211700836,-8.89649295997777e-18,-0.00582781581531654,-0.0118150822918442,-0.0178271953766885,-0.0237221565644684,
                              -0.0293531653612106,-0.0345713796105044,-0.0392287913457370,-0.0431811625587258,-0.0462909631069959,-0.0484302519778048,-0.0494834433212715,
                              -0.0493499000671152,-0.0479463005336786,-0.0452087271829673,-0.0410944315056948,-0.0355832348467026,-0.0286785316929336,-0.0204078694131854,
@@ -22,48 +26,54 @@ const double RRC[RRC_len] = {0.0290581511866829,0.0292861195166709,0.02878744170
                              -0.00582781581531654,-8.89649295997777e-18,0.00554353211700836,0.0106898363592876,0.0153396797427319,0.0194090371891105,0.0228302397253860,
                              0.0255527588425467,0.0275436194555175,0.0287874417058172,0.0292861195166709,0.0290581511866829};
 
-const int key[45] = {1, 1, 1, -1, -1, -1, 1, -1, -1, 1, 1, -1, 1, -1, 1,
-                     1, 1, 1, -1, -1, -1, 1, -1, -1, 1, 1, -1, 1, -1, 1,
-                     1, 1, 1, -1, -1, -1, 1, -1, -1, 1, 1, -1, 1, -1, 1};
 
 // params
 // output: output array
 // bits: input bit array
-// N: length of bits array
-void calculate_transmit(uint16_t * output, int * bits) {
+// F: Normalized frequency. F = fc/Fs
+// phase: phase to start modulator at 
+
+void upsample(float * x, float * out, int size, int samppsymb);
+
+struct parameters_t transmit(uint16_t * output, int * bits, struct parameters_t params) {
     // create upsample array
-    const int sample_sz = (N+45)*sps;
-    double symbols[N+45];
-    double samples[(N+45)*sps];
-    double out[1<<13];
+    const int sample_sz = N*sps;
+    float symbols[N];
+    float samples[N*sps];
+    float out[1<<((int)ceil(log2(N*sps)))];
+    float t[N*sps];
+
     // create symbols
-    for (int i = 0; i < N+45; i++) {
-        if (i < 45) {
-            symbols[i] = key[i];
-        } else {
-            symbols[i] = (bits[i-45]-0.5)*2;
-        }
+    for (int i = 0; i < N; i++) {
+        symbols[i] = (bits[i]-0.5)*2;
     }
     
     // upsample bits
-    int k = 0;
-    for (int i = 0; i < sample_sz; i++) {
-        if (i%sps == 0) {
-            samples[i] = symbols[k];
-            k++;
-        } else {
-            samples[i] = 0;
-        }
-    }
+    upsample(symbols, samples, sample_sz, sps);
     // convolve with pulse filter
     conv(samples, RRC, out, sample_sz, RRC_len, sample_sz+RRC_len-1);
     // narrow the range of convolution while also finding min and max
-    int shift = RRC_len/2 + 0.5;
+    float shift = RRC_len/2. - 0.5;
     for (int i = shift ; i < sample_sz+RRC_len-1-shift; i++) {
-        out[i-shift] = out[i];
+        int k = i - shift;
+        out[k] = out[i]*cos(2*M_PI*k*F);
     }
+
     // scale to output
     for (int i = 0; i < sample_sz; i++) {
-        output[i] = (out[i]+1)*(1<<12);
+        output[i];
+        output[i] = (out[i]+1)*(1<<11);
+    }
+}
+
+void upsample(float * x, float * out, int size, int samppsymb) {
+    int k = 0;
+    for (int i = 0; i < size; i++) {
+        if (i%samppsymb == 0) {
+            out[i] = x[k];
+            k++;
+        } else {
+            out[i] = 0;
+        }
     }
 }

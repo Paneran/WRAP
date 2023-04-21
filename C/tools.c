@@ -1,7 +1,6 @@
 //==========================================
 // Title:  Toolbox for WRAP MCU
 // Author: Nathan Pereira
-// Last Modified: December 8, 2022
 //==========================================
 #include <complex.h>
 #include <stdio.h>
@@ -10,9 +9,8 @@
 
 // ensure to set max_N to your max packet size. 
 // keep this as a power of 2. 
-#define max_N 2048
+#define max_N 32768
 
-// would it be worth it to make space NlogN to cut computation time in half?
 /* 
 Radix-2 FFT with dynamic programming. Space complexity N.
 Params:
@@ -20,15 +18,15 @@ x1: array to take FFT
 X : output array
 N: length of input array. Must be a power of 2.
 */
-void FFT(const double * x, double complex* X, const int N) {
+void FFT(const float * x, float complex* X, const int N) {
     int p = log2(N);
     if (floor(p) != p) {
         printf("WARNING: N must be a power of 2. Zero Pad first. it is %i\n", N);
         return; 
     }
     // allocate memory
-    double complex X_e[max_N>>1];
-    double complex X_o[max_N>>1];
+    float complex X_e[max_N>>1];
+    float complex X_o[max_N>>1];
     // copy x into X so we don't modify x. 
     for (int i = 0; i < N; i++) {
         X[i] = x[i];
@@ -52,7 +50,7 @@ void FFT(const double * x, double complex* X, const int N) {
         }
     }
     // put together the 2 point FFT pairs to make whole FFT. O(N log(N)) 
-    double complex w, tw;
+    float complex w, tw;
     for (int i = 0; i < p; i++) {
         int l = 1<<i; // half block length
         int b = l<<1; // full block length
@@ -81,15 +79,15 @@ x1: array to take IFFT
 X : output array
 N: length of input array. Must be a power of 2. 
 */
-void IFFT(const double complex* x, double complex* X, const int N) {
+void IFFT(const float complex* x, float complex* X, const int N) {
     int p = log2(N);
     if (floor(p) != p) {
         printf("WARNING: N must be a power of 2. it is %i\n", N);
         return; 
     }
     // allocate memory
-    double complex X_e[max_N>>1];
-    double complex X_o[max_N>>1];
+    float complex X_e[max_N>>1];
+    float complex X_o[max_N>>1];
     // copy x into X so we don't modify x. 
     for (int i = 0; i < N; i++) {
         *(X + i) = *(x + i);
@@ -113,7 +111,7 @@ void IFFT(const double complex* x, double complex* X, const int N) {
         }
     }
     // put together the 2 point IDFT pairs to make whole IFFT. O(N log(N)) 
-    double complex w, tw;
+    float complex w, tw;
     for (int i = 0; i < p; i++) {
         int l = 1<<i; // half block length
         int b = l<<1; // full block length
@@ -149,7 +147,7 @@ l1: length of array 1
 l2: length of array 2
 L : length of array X
 */
-void xcorr(double* x1, double* x2, double* X, const int l1, const int l2, const int L) {
+void xcorr(float* x1, float* x2, float* X, const int l1, const int l2, const int L) {
     // preliminary warnings on output sizing. 
     if (L != (l1 + l2 -1)) {
         printf("WARNING: Make L=l1+l2-1. Op Cancelled.\n");
@@ -157,14 +155,14 @@ void xcorr(double* x1, double* x2, double* X, const int l1, const int l2, const 
     }
     
     // set initial pointer positions of what values in each vector should be considered
-    double * a1 = x1 + l1 - 1, *a2 = x1 + l1 - 1, *b1 = x2, *b2 = x2;
+    float * a1 = x1 + l1 - 1, *a2 = x1 + l1 - 1, *b1 = x2, *b2 = x2;
     // set all values in X to zero
     for (int i = 0; i < L; i++)
         *(X + i) = 0;
     
     // perform cross correlation
     int j;
-    double * a, * b;
+    float * a, * b;
     for (int i = 1; i <= L; i++) {
         j = 0;
         // finding the correlation at a certain index. 
@@ -185,26 +183,26 @@ void xcorr(double* x1, double* x2, double* X, const int l1, const int l2, const 
 }
 
 /* 
-Convert complex array to double. Takes real component.
+Convert complex array to float. Takes real component.
 Params:
 x1: array 1 to cast
 X : output array
 L : length of all arrays
 */
-void complex2double(const double complex* x1, double * X, const int L) {
+void complex2float(const float complex* x1, float * X, const int L) {
     for (int i = 0; i < L; i++) {
         X[i] = creal(x1[i]);
     }
 }
 
 /* 
-Convert double array to complex
+Convert float array to complex
 Params:
 x1: array 1 to cast
 X : output array
 L : length of all arrays
 */
-void double2complex(const double * x1, double complex * X, const int L) {
+void float2complex(const float * x1, float complex * X, const int L) {
     for (int i = 0; i < L; i++) {
         X[i] = x1[i];
     }
@@ -221,7 +219,7 @@ X : output array
 l1: length of input array
 l2: length of another array(not passed in), which array should be padded to
 */
-int zeropad(const double * x1, double * X, const int l1, const int l2) {
+int zeropad(const float * x1, float * X, const int l1, const int l2) {
     int L = l1 + l2 - 1;
     int k = ceil(log2(L));
     int i = 0;
@@ -236,14 +234,14 @@ int zeropad(const double * x1, double * X, const int l1, const int l2) {
 }
 
 /* 
-Multiply complex double arrays together
+Multiply complex float arrays together
 Params:
 x1: array 1 to multiply
 x2: array 2 to multiply
 X : output array
 L : length of all arrays
 */
-void multiply_c(const double complex *a, const double complex *b, double complex *c, int L) {
+void multiply_c(const float complex *a, const float complex *b, float complex *c, int L) {
     for (int i = 0; i < L; i++) {
         c[i] = a[i] * b[i];
     }
@@ -251,14 +249,14 @@ void multiply_c(const double complex *a, const double complex *b, double complex
 
 
 /* 
-Multiply double arrays together
+Multiply float arrays together
 Params:
 x1: array 1 to multiply
 x2: array 2 to multiply
 X : output array
 L : length of all arrays
 */
-void multiply(const double *x1, const double *x2, double *X, int L) {
+void multiply(const float *x1, const float *x2, float *X, int L) {
     for (int i = 0; i < L; i++) {
         X[i] = x1[i] * x2[i];
     }
@@ -277,19 +275,19 @@ l1: length of array 1
 l2: length of array 2
 output is stored in x1
 */
-void filter(double * x1, const double * x2, const int l1, const int l2) {
+void filter(float * x1, const float * x2, const int l1, const int l2) {
     // could set a better upperbound/ design these functions s.t. no need for temp arrays
-    double complex A[max_N];
-    double complex B[max_N];
-    double complex C[max_N];
-    double temp[max_N];
+    float complex A[max_N];
+    float complex B[max_N];
+    float complex C[max_N];
+    float temp[max_N];
     int L = zeropad(x1, temp, l1, l2);
     FFT(temp, A, L);
     zeropad(x2, temp, l1, l2);
     FFT(temp, B, L);
     multiply_c(A, B, C, L);
     IFFT(C, A, L);
-    complex2double(A, x1, l1);
+    complex2float(A, x1, l1);
 }
 
 
@@ -303,16 +301,16 @@ l1: length of array 1
 l2: length of array 2
 L : length of array X
 */
-void conv(const double * x1, const double * x2, double * X, const int l1, const int l2, const int L) {
+void conv(const float * x1, const float * x2, float * X, const int l1, const int l2, const int L) {
     if (L != (l1 + l2 -1)) {
         printf("WARNING: Make L=l1+l2-1. Op Cancelled.\n");
         return;
     }
     int N = 1<<((int) ceil(log2(L)));
-    double complex A[max_N];
-    double complex B[max_N];
-    double complex C[max_N];
-    double temp[max_N];
+    float complex A[max_N];
+    float complex B[max_N];
+    float complex C[max_N];
+    float temp[max_N];
     zeropad(x1, temp, l1, l2);
     // failing at FFT for some reason
     FFT(temp, A, N);
@@ -320,5 +318,5 @@ void conv(const double * x1, const double * x2, double * X, const int l1, const 
     FFT(temp, B, N);
     multiply_c(A, B, C, N);
     IFFT(C, A, N);
-    complex2double(A, X, L);
+    complex2float(A, X, L);
 } 

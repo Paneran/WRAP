@@ -10,9 +10,9 @@ int main() {
     int fil = 0;
     int con = 1;
     if (cor) {
-        double e[8] = {1, 2, 3, 4, 6, 9, 2, 4};
-        double f[8] = {2, 3, 5, 7, 0, 2, 9, 5};
-        double g[15];
+        float e[8] = {1, 2, 3, 4, 6, 9, 2, 4};
+        float f[8] = {2, 3, 5, 7, 0, 2, 9, 5};
+        float g[15];
         xcorr(f, e, g, 8, 8, 15);
         printf("g:\n");
         for (int i = 0; i < 15; i++) {
@@ -27,12 +27,12 @@ int main() {
     }
     
     if (ft) {
-        double a[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-        double complex A[8];
-        double b[2] = {0, 1};
-        double complex B[2];
-        double complex c[8]; 
-        double complex d[8];
+        float a[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+        float complex A[8];
+        float b[2] = {0, 1};
+        float complex B[2];
+        float complex c[8]; 
+        float complex d[8];
 
         FFT(a, A, 8);
         FFT(b, B, 2); 
@@ -60,15 +60,15 @@ int main() {
     }
 
     if (cast) {
-        double a[3] = {3, 2, 7};
-        double complex a_[3];
-        double2complex(a, a_, 3);
+        float a[3] = {3, 2, 7};
+        float complex a_[3];
+        float2complex(a, a_, 3);
         printf("a_:\n");
         for (int i = 0; i < 3; i++) {
             printf("values of complex number: %.2lf+%.2lfi\n", creal(*(a_+i)), cimag(*(a_+i)));
         }
-        double b[3];
-        complex2double(a_, b, 3);
+        float b[3];
+        complex2float(a_, b, 3);
         printf("b:\n");
         for (int i = 0; i < 3; i++) {
             printf("values of complex number: %.2lf\n", *(b+i));
@@ -78,9 +78,9 @@ int main() {
     if (fil) {
         // fifth order low pass filter. generated with firpm
         // f = [0 0.2 0.25 1], a = [1, 1, 0, 0]: firpm(5, f, a)
-        double lp[6] = {0.2630, 0.1926, 0.2207, 0.2207, 0.1926, 0.2630};
-        double x[6] = {1, 1, 1, 1, 1, 1};
-        double ans[6] = {0.2630, 0.4556, 0.6763, 0.8970, 1.0896, 1.3526};
+        float lp[6] = {0.2630, 0.1926, 0.2207, 0.2207, 0.1926, 0.2630};
+        float x[6] = {1, 1, 1, 1, 1, 1};
+        float ans[6] = {0.2630, 0.4556, 0.6763, 0.8970, 1.0896, 1.3526};
         filter(x, lp, 6, 6);
         for (int i = 0; i < 6; i++) {
             printf("values of complex number: %.4lf\n", *(x+i));
@@ -88,13 +88,11 @@ int main() {
     }
 
     if (con) {
-        double e[7] = {1, 2, 3, 4, 6, 9, 2};
-        double f[8] = {2, 3, 5, 7, 0, 2, 9, 5};
-        double g[14];
-        printf("hi");
+        float e[7] = {1, 2, 3, 4, 6, 9, 2};
+        float f[8] = {2, 3, 5, 7, 0, 2, 9, 5};
+        float g[14];
         conv(e, f, g, 7, 8, 14);
         for (int i = 0; i < 14; i++) {
-            printf("hi");
             printf("%f ", *(g+i));
         }
         printf("\n");

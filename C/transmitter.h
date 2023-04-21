@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-void calculate_transmit(uint16_t * output, int * bits);
+void transmit(uint16_t * output, int * bits, float F, float phase);
 
 #endif

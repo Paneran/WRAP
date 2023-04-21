@@ -98,6 +98,7 @@ Hd = c2d(Hc, 1/Fs, 'tustin');
 [a, b] = tfdata(Hd);
   
 y = real(filter(a{:}, b{:}, Rx));
+y = Tx;
 
 figure()
 plot(t(10000:11000), y(10000:11000));
@@ -106,7 +107,7 @@ y = y/(mean(abs(y)))/10;
 t = 0:1/Fs:Tmax-1/Fs;
 % use costas loop to demodulate
 % works from ~0.95e6-1.05e6
-df = -1e4;
+df = 0;
 f0 = fc+df; %1.05e6; % estimated frequency
 ph = zeros(1, N+1);
 inph = zeros(1, N);
@@ -144,6 +145,8 @@ for i = order+1:N
     integrator = integrator + ki * err(i);
     ph(i+1) = ph(i)+kp*err(i)+integrator;
 end
+figure()
+plot(inph(1:10000))
 figure()
 scatter(inph, quad)
 inph(end-5:end)=zeros(1, 6);
