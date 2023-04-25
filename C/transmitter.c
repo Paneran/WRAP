@@ -35,7 +35,7 @@ const float RRC[RRC_len] = {0.0290581511866829,0.0292861195166709,0.028787441705
 
 void upsample(float * x, float * out, int size, int samppsymb);
 
-struct parameters_t transmit(uint16_t * output, int * bits, struct parameters_t params) {
+void transmit(uint16_t * output, int * bits, struct parameters_t * params) {
     // create upsample array
     const int sample_sz = N*sps;
     float symbols[N];
@@ -51,17 +51,18 @@ struct parameters_t transmit(uint16_t * output, int * bits, struct parameters_t 
     // upsample bits
     upsample(symbols, samples, sample_sz, sps);
     // convolve with pulse filter
-    conv(samples, RRC, out, sample_sz, RRC_len, sample_sz+RRC_len-1);
+    conv(samples, RRC, out, sample_sz, RRC_len);
     // narrow the range of convolution while also finding min and max
     float shift = RRC_len/2. - 0.5;
+    int k;
     for (int i = shift ; i < sample_sz+RRC_len-1-shift; i++) {
-        int k = i - shift;
-        out[k] = out[i]*cos(2*M_PI*k*F);
+        k = i - shift;
+        out[k] = out[i]*cos(2*M_PI*k*F + params->phase);
     }
-
+    params->phase = 2*M_PI*k*F + params->phase;
+    
     // scale to output
     for (int i = 0; i < sample_sz; i++) {
-        output[i];
         output[i] = (out[i]+1)*(1<<11);
     }
 }

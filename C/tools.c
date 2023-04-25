@@ -7,9 +7,9 @@
 #include <stdlib.h>
 #include <math.h>
 
-// ensure to set max_N to your max packet size. 
+// ensure to set MAX_N to your max packet size. 
 // keep this as a power of 2. 
-#define max_N 32768
+#define NAX_N 32768
 
 /* 
 Radix-2 FFT with dynamic programming. Space complexity N.
@@ -25,8 +25,8 @@ void FFT(const float * x, float complex* X, const int N) {
         return; 
     }
     // allocate memory
-    float complex X_e[max_N>>1];
-    float complex X_o[max_N>>1];
+    float complex X_e[MAX_N>>1];
+    float complex X_o[MAX_N>>1];
     // copy x into X so we don't modify x. 
     for (int i = 0; i < N; i++) {
         X[i] = x[i];
@@ -86,8 +86,8 @@ void IFFT(const float complex* x, float complex* X, const int N) {
         return; 
     }
     // allocate memory
-    float complex X_e[max_N>>1];
-    float complex X_o[max_N>>1];
+    float complex X_e[MAX_N>>1];
+    float complex X_o[MAX_N>>1];
     // copy x into X so we don't modify x. 
     for (int i = 0; i < N; i++) {
         *(X + i) = *(x + i);
@@ -147,12 +147,8 @@ l1: length of array 1
 l2: length of array 2
 L : length of array X
 */
-void xcorr(float* x1, float* x2, float* X, const int l1, const int l2, const int L) {
-    // preliminary warnings on output sizing. 
-    if (L != (l1 + l2 -1)) {
-        printf("WARNING: Make L=l1+l2-1. Op Cancelled.\n");
-        return;
-    }
+void xcorr(float* x1, float* x2, float* X, const int l1, const int l2) {
+    int L = l1 + l2 -1;
     
     // set initial pointer positions of what values in each vector should be considered
     float * a1 = x1 + l1 - 1, *a2 = x1 + l1 - 1, *b1 = x2, *b2 = x2;
@@ -270,24 +266,24 @@ performs a linear convolution and stores the first l1 results back in a
 have MATLAB generate the filters. 
 Params:
 x1: array 1 to filter
-x2: array 2 to filter
+x2: filter
+out: output of filter -- same length as x1
 l1: length of array 1
 l2: length of array 2
-output is stored in x1
 */
-void filter(float * x1, const float * x2, const int l1, const int l2) {
+void filter(const float * x1, const float * x2, float * out, const int l1, const int l2) {
     // could set a better upperbound/ design these functions s.t. no need for temp arrays
-    float complex A[max_N];
-    float complex B[max_N];
-    float complex C[max_N];
-    float temp[max_N];
+    float complex A[MAX_N];
+    float complex B[MAX_N];
+    float complex C[MAX_N];
+    float temp[MAX_N];
     int L = zeropad(x1, temp, l1, l2);
     FFT(temp, A, L);
     zeropad(x2, temp, l1, l2);
     FFT(temp, B, L);
     multiply_c(A, B, C, L);
     IFFT(C, A, L);
-    complex2float(A, x1, l1);
+    complex2float(A, out, l1);
 }
 
 
@@ -301,16 +297,13 @@ l1: length of array 1
 l2: length of array 2
 L : length of array X
 */
-void conv(const float * x1, const float * x2, float * X, const int l1, const int l2, const int L) {
-    if (L != (l1 + l2 -1)) {
-        printf("WARNING: Make L=l1+l2-1. Op Cancelled.\n");
-        return;
-    }
+void conv(const float * x1, const float * x2, float * X, const int l1, const int l2) {
+    int L = l1 + l2 -1;
     int N = 1<<((int) ceil(log2(L)));
-    float complex A[max_N];
-    float complex B[max_N];
-    float complex C[max_N];
-    float temp[max_N];
+    float complex A[MAX_N];
+    float complex B[MAX_N];
+    float complex C[MAX_N];
+    float temp[MAX_N];
     zeropad(x1, temp, l1, l2);
     // failing at FFT for some reason
     FFT(temp, A, N);
@@ -320,3 +313,8 @@ void conv(const float * x1, const float * x2, float * X, const int l1, const int
     IFFT(C, A, N);
     complex2float(A, X, L);
 } 
+
+float wrap_to_pi(const float x) {
+    float mod_x = modf(x,2*M_PI);
+    return (mod_x > M_PI) ? mod_x - M_PI : mod_x;
+}
