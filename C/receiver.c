@@ -1,22 +1,12 @@
-#include "tools.h"
 #include <math.h>
+#include <stdint.h>
+#include <stdio.h>
+#include "tools.h"
+#include "constants.h"
 
-#define ORDER 5
-#define NUM_SAMPLES 30000 // ***** change *****
-#define RRC_len 101
-#define CORRELATION_BUFFER 1024
-#define INFO_SIZE 256
-
-struct parameters_r {
-    float phase;
-    float sps;
-};
-void normalize(uint16_t * samples, float * norm_samples);
-void costas_loop(float * samples, float * samples_d);
-
-const int key[15] = {1, 1, 1, -1, -1, -1, 1, -1, -1, 1, 1, -1, 1, -1, 1};
 const float lp[ORDER + 1] = {0.238053579626575,0.064423148855147,0.0684583456734438,0.0684583456734438,0.0644231488551473,0.238053579626575};
-const float RRC[RRC_len] = {0.0290581511866829,0.0292861195166709,0.0287874417058172,0.0275436194555175,0.0255527588425467,0.0228302397253860,0.0194090371891105,0.0153396797427319,
+int key[15] = {1, 1, 1, -1, -1, -1, 1, -1, -1, 1, 1, -1, 1, -1, 1}; // packet header
+const float RRC_r[RRC_LEN] = {0.0290581511866829,0.0292861195166709,0.0287874417058172,0.0275436194555175,0.0255527588425467,0.0228302397253860,0.0194090371891105,0.0153396797427319,
                              0.0106898363592876,0.00554353211700836,-8.89649295997777e-18,-0.00582781581531654,-0.0118150822918442,-0.0178271953766885,-0.0237221565644684,
                              -0.0293531653612106,-0.0345713796105044,-0.0392287913457370,-0.0431811625587258,-0.0462909631069959,-0.0484302519778048,-0.0494834433212715,
                              -0.0493499000671152,-0.0479463005336786,-0.0452087271829673,-0.0410944315056948,-0.0355832348467026,-0.0286785316929336,-0.0204078694131854,
@@ -31,6 +21,10 @@ const float RRC[RRC_len] = {0.0290581511866829,0.0292861195166709,0.028787441705
                              -0.00582781581531654,-8.89649295997777e-18,0.00554353211700836,0.0106898363592876,0.0153396797427319,0.0194090371891105,0.0228302397253860,
                              0.0255527588425467,0.0275436194555175,0.0287874417058172,0.0292861195166709,0.0290581511866829};
 
+void normalize(uint16_t * samples, float * norm_samples);
+void costas_loop(float * samples, float * samples_d);
+int  timing_recovery(float * filtered_samps, int * symbs);
+
 /*
 Takes samples and turns them into symbols.
 samples: samples from ADC
@@ -40,25 +34,101 @@ returns length of symbs array. symbs array must be
 allocated for longer than samples/sps + some margin
 */
 
-int demodulate(uint16_t * samples, int * symbs, struct parameters_r * params) {
+int demodulate(uint16_t * samples, int * symbs, params_r * params) {
     float norm_samples[NUM_SAMPLES];
     normalize(samples, norm_samples);
 
+    FILE *fpt1 = fopen("norm_wave.csv", "w+");
+    for (int i = 0; i < NUM_SAMPLES; i++) {
+        fprintf(fpt1, "%f,", norm_samples[i]);
+    }
+    fclose(fpt1);
+
     float samples_d[NUM_SAMPLES] = {0, 0, 0, 0, 0, 0};
-    costas_loop(norm_samples, samples_d);
+    const int F = 1;
+    float phase = 0;
+    float inph[ORDER+1] = {0, 0, 0, 0, 0, 0};
+    float quad[ORDER+1] = {0, 0, 0, 0, 0, 0};
+    float inph_[ORDER+1] = {0, 0, 0, 0, 0, 0};
+    float quad_[ORDER+1] = {0, 0, 0, 0, 0, 0};
+    double error = 0;
+    double integrator = 0;
+
+    float kp = 0.05;
+    float ki = 0.0005;
+
+    for (int i = ORDER; i < NUM_SAMPLES+ORDER; i++) {
+        // define t from microcontroller
+        inph_[ORDER] = samples[i-ORDER]*2*cos(2*M_PI*F*i + phase);
+        quad_[ORDER] = samples[i-ORDER]*-2*sin(2*M_PI*F*i + phase);
+
+        filter(inph_,lp, inph, ORDER+1,ORDER+1);
+        filter(quad_,lp, quad, ORDER+1,ORDER+1);
+
+        samples_d[i] = inph[ORDER];
+
+        error = inph[ORDER] * quad[ORDER];
+        integrator = integrator + ki*error;
+        phase = phase + kp*error + integrator;
+        
+        // shift the values of inph_ and quad_
+        for (int j = 1; j < ORDER; j++) {
+            inph_[j-1] = inph_[j];
+            quad_[j-1] = quad_[j];
+        }
+    }
+
+    FILE *fpt2 = fopen("costa_samples.csv", "w+");
+    for (int i = 0; i < NUM_SAMPLES; i++) {
+        fprintf(fpt2, "%f,", samples_d[i]);
+    }
+    fclose(fpt2);
     
     // filter w SRRC
     float filtered_samps[1<<((int)ceil(log2(NUM_SAMPLES)))];
-    conv(samples_d, RRC, filtered_samps, NUM_SAMPLES, RRC_len);
+    conv(samples_d, RRC_r, filtered_samps, NUM_SAMPLES, RRC_LEN);
 
     // timing recovery
-    return timing_recovery(filtered_samps, symbs);
+    const float kp_PLL = 0.3;
+    const float ki_PLL = 1.1;
+    const int guess_sps = 20;
+    const float margin = 0.75;
+
+    float sps = params->sps;
+    integrator = 0; error = 0;
+    float prev_phase = params->TR_phase;
+    int bit_len = 0;
+    
+    float zc[NUM_SAMPLES-1];
+
+    // calculate zero crossings
+    for (int i = 0; i < NUM_SAMPLES-1; i++) {
+        int temp = (filtered_samps[i+1] * filtered_samps[i])/abs((filtered_samps[i+1] * filtered_samps[i]));
+        zc[i] = !(temp+1);
+    }
+
+    // timing recovery
+    for (int i = 1; i < NUM_SAMPLES; i++) {
+        phase = prev_phase + 2*M_PI/sps;
+        if (wrap_to_pi(phase) < -M_PI * margin && wrap_to_pi(prev_phase) > M_PI * margin) {
+            symbs[bit_len] = (int)(filtered_samps[i]/filtered_samps[i]);
+            bit_len++;
+        }
+        if (zc[i-1]){
+            error = wrap_to_pi(phase);
+            integrator = integrator + error * ki_PLL;
+            sps = guess_sps + error*kp_PLL + integrator;
+        }
+        prev_phase = phase;
+    }
+
+    return bit_len;
 }
 
 
 void find_packet(int * symbs, uint8_t * out, int num_symbs) {
     // take cross correlation
-    float xcorr_out[CORRELATION_BUFFER];
+    int xcorr_out[CORRELATION_BUFFER];
     xcorr(symbs, key, xcorr_out, num_symbs, 15);
 
     // find packet
@@ -67,7 +137,7 @@ void find_packet(int * symbs, uint8_t * out, int num_symbs) {
         if (abs(xcorr_out[i] + xcorr_out[i+15] + xcorr_out[i+30] ) > 39) {
             shift = i+45;
             if (xcorr_out[i] < 0) {
-                for (int i = 0; i < INFO_SIZE; i++) {
+                for (int i = 0; i < N; i++) {
                     symbs[shift + i] = symbs[shift+ i]*-1;
                 }
             }
@@ -76,7 +146,7 @@ void find_packet(int * symbs, uint8_t * out, int num_symbs) {
     }
     
     // convert symbols to bits
-    for (int i = 0; i < INFO_SIZE; i++) {
+    for (int i = 0; i < N; i++) {
         out[i] = (symbs[shift+i]+1)*0.5;
     }
 }
@@ -100,76 +170,4 @@ void normalize(uint16_t * samples, float * norm_samples) {
     for (int i = 0; i < NUM_SAMPLES; i++) {
         norm_samples[i] = (samples[i]-mean)/var;
     }
-}
-
-void costas_loop(float * samples, float * samples_d) {
-    // Costas Loop
-    const int f_0 = 1000000;
-    float t = 0;
-    float phase = 0;
-    float inph[ORDER+1] = {0, 0, 0, 0, 0, 0};
-    float quad[ORDER+1] = {0, 0, 0, 0, 0, 0};
-    float inph_[ORDER+1] = {0, 0, 0, 0, 0, 0};
-    float quad_[ORDER+1] = {0, 0, 0, 0, 0, 0};
-    double error = 0;
-    double integrator = 0;
-
-    float kp = 0.05;
-    float ki = 0.0005;
-
-    for (int i = ORDER; i < NUM_SAMPLES+ORDER; i++) {
-        // define t from microcontroller
-        inph_[ORDER] = samples[i-ORDER]*2*cos(2*M_PI*f_0*t + phase);
-        quad_[ORDER] = samples[i-ORDER]*-2*sin(2*M_PI*f_0*t + phase);
-
-        filter(inph_,lp, inph, ORDER+1,ORDER+1);
-        filter(quad_,lp, quad, ORDER+1,ORDER+1);
-
-        samples_d[i] = inph[ORDER];
-
-        error = inph[ORDER] * quad[ORDER];
-        integrator = integrator + ki*error;
-        phase = phase + kp*error + integrator;
-        
-        // shift the values of inph_ and quad_
-        for (int j = 1; j < ORDER; j++) {
-            inph_[j-1] = inph_[j];
-            quad_[j-1] = quad_[j];
-        }
-    }
-}
-
-int timing_recovery(float * filtered_samps, int * symbs) {
-    const float kp_PLL = 0.3;
-    const float ki_PLL = 1.1;
-    const int guess_sps = 20;
-    const float margin = 0.75;
-
-    float sps = params.sps;
-    float integrator = 0, error = 0;
-    float phase, prev_phase = params.phase;
-    int bit_len = 0;
-
-    float zc[NUM_SAMPLES-1];
-    // calculate zero crossings
-    for (int i = 0; i < NUM_SAMPLES-1; i++) {
-        zc[i] = !(sign(filtered_samps[i+1] * filtered_samps[i])+1);
-    }
-
-    // timing recovery
-    for (int i = 1; i < NUM_SAMPLES; i++) {
-        phase = prev_phase + 2*M_PI/sps;
-        if (wrap_to_pi(phase) < -M_PI * margin && wrap_to_pi(prev_phase) > M_PI * margin) {
-            symbs[bit_len] = sign(filtered_samps[i]);
-            bit_len++;
-        }
-        if (zc[i-1]){
-            error = wrap_to_pi(phase);
-            integrator = integrator + error * ki_PLL;
-            sps = guess_sps + error*kp_PLL + integrator;
-        }
-        prev_phase = phase;
-    }
-
-    return bit_len;
 }

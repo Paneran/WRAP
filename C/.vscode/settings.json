@@ -6,7 +6,8 @@
         "stdio.h": "c",
         "stdint.h": "c",
         "stdlib.h": "c",
-        "tools.h": "c"
+        "tools.h": "c",
+        "constants.h": "c"
     },
     "makefile.launchConfigurations": [
         {
