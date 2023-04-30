@@ -3,14 +3,19 @@
 
 // ***** CHANGE ALL PARAMS ACCORDING TO WHAT YOU USE ON YOUR CODE *****
 
-#define RRC_LEN 101             // length of square root raised cosine filter
-#define N 301                   // number of symbols being transmitted (data and header)
-#define SPS 100                 // sps
+#define DEBUG 1
+
+#define RRC_LEN 401             // length of square root raised cosine filter
+#define N 256                   // number of symbols being transmitted (data and header)
+#define FS 4000000
+#define FC 1000000.
+#define RS 50000
+#define SPS FS/RS 
 
 // receiver params
 #define ORDER 5                 // low pass filter order
-#define CORRELATION_BUFFER 1024 // length of how long the correlation is
-#define NUM_SAMPLES 30100       // Number of samples to process in receiver buffer (length of buffer) 
+#define CORRELATION_BUFFER 32768 // length of how long the correlation is
+#define NUM_SAMPLES N*SPS       // Number of samples to process in receiver buffer (length of buffer) 
 
 // parameters to pass between calls of transmitter
 typedef struct params_t {

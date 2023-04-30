@@ -2,8 +2,16 @@
 #include <stdio.h>
 #include "tools.h"
 
+#define a 1.
+#define b 4
+
 // testing program
 int main() {
+    
+    float x = a/b;
+    
+    printf("%f\n", x);
+    /*
     int ft = 0;
     int cor = 0;
     int cast = 0;
@@ -97,4 +105,5 @@ int main() {
         }
         printf("\n");
     }
+    */
 }

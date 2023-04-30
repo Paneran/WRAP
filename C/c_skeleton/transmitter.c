@@ -20,6 +20,8 @@ void transmit(int * bits, uint16_t * output, params_t * params) {
 
     // convolve with pulse filter
     
+    // modulate
+
     // scale to output
 
 }

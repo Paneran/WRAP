@@ -19,7 +19,7 @@ int main() {
     // print transmitted symbols to file
     FILE *fpt = fopen("MyFile.csv", "w+");
     int i = 0;
-    for (; i < N; i++) {
+    for (; i < N*SPS; i++) {
         fprintf(fpt, "%u,", output[i]);
     }
     fclose(fpt);

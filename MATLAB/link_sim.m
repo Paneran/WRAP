@@ -8,7 +8,7 @@ close all;
 % This version of the code modulates and demodulates the signal.
 % The packet header is found. 
 %%
-Fs = 5000000;             % Sampling rate
+Fs = 4000000;             % Sampling rate
 N  = 300000;               % Number of points sampled
 Tmax = N/Fs;              % length of packet (s)
 Rs = 50000;               % Symbol rate in symbols/sec (baud)
@@ -86,11 +86,9 @@ phase = unifrnd(0, 2*pi);
 Tx = real(analytic_sig*exp(1i*phase));
 
 %% Noise and Band Limited Channel
-std_ = 0.05;
+std_ = 0.01;
 noise = std_ * randn(1,N);
 Rx = Tx + noise;
-phase = unifrnd(0, 2*pi);
-Rx = real(Rx*exp(1i*phase));
 
 s = tf('s');
 Hc = B*s/(s^2 + s*B + fc^2);
@@ -102,11 +100,13 @@ y = real(filter(a{:}, b{:}, Rx));
 %figure()
 %plot(t(10000:11000), y(10000:11000));
 
-y = (y-mean(y))/std(y);
+y = (y-mean(y))/std(y)/25;
+figure();
+plot(y);
 t = 0:1/Fs:Tmax-1/Fs;
 % use costas loop to demodulate
 % works from ~0.95e6-1.05e6
-df = 5e4;
+df = 0;
 f0 = fc+df; %1.05e6; % estimated frequency
 ph = zeros(1, N+1);
 inph = zeros(1, N);
@@ -114,7 +114,7 @@ quad = zeros(1, N);
 inph_ = zeros(1, N);
 quad_ = zeros(1, N);
 err = zeros(1, N);
-% nyquist rate: Fs/2=2500000
+% nyquist rate: Fs/2=2000000
 % create lowpass as percent of this
 f = [0, 0.1, 0.15, 1];
 a = [1, 1, 0, 0];
@@ -122,8 +122,8 @@ order = 5;
 lp = firpm(order, f, a);
 integrator = 0;
 
-kp = 0.05;
-ki = 0.0005;
+kp = 8.5;
+ki = 0.1;
 
 for i = order+1:N
     c = 2*cos(2*pi*f0*t(i)+ph(i));
@@ -161,12 +161,9 @@ A = [1:N+1; ones(length(ph), 1)'];
 x = A'\ph';
 
 % SRRC
-span = 5;
-sps = 100;
-srrc = rcosdesign(0.5, span, sps, 'sqrt');
 l = inph+1j*quad;
-l = upfirdn(l, srrc,1,1);
-l = l(length(srrc)/2+0.5:end-length(srrc)/2+0.5);
+l = upfirdn(l, RRC,1,1);
+l = l(length(RRC)/2+0.5:end-length(RRC)/2+0.5);
 
 inph = real(l);
 quad = imag(l);
@@ -174,6 +171,7 @@ figure();
 plot(inph);
 hold on
 plot(quad)
+hold off
 legend("In_phase", "quad")
 
 figure();
@@ -185,9 +183,6 @@ i = real(l);
 q = imag(l);
 %create zero crossing signal
 zero_cross = ~(sign(i(1:end-1).*i(2:end))+1);
-
-%Get data rate
-sps = 100;
 
 %PLL clock recovery pll
 Kp_PLL = 0.3;
@@ -216,9 +211,12 @@ for k = 1:N-1
   prev_acc = phase_acc;
   phase_acc = phase_acc + 2*pi/sps;
 end
-hold on;
+
+figure();
 plot (real_samp);
+hold on;
 plot(quad_samp);
+hold off;
 selected = real_samp +1j*quad_samp;
 legend("Real sampled", "Imaginary sampled");
 scatterplot(real_samp+quad_samp*1j);

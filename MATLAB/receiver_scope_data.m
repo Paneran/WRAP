@@ -21,6 +21,7 @@ y = transpose(y);
 
 % Make time start at 0
 x = x+Tmax/2;
+y = (y-mean(y))/std(y)/25;
 figure;
 plot (x,y);
 legend("Scope Signal");
