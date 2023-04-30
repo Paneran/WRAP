@@ -24,7 +24,7 @@ int main() {
     
     transmit(key_w_bits, output, &t_params);
     if(DEBUG) {
-        FILE *fpt = fopen("MyFile.csv", "w+");
+        FILE *fpt = fopen("data/MyFile.csv", "w+");
         int i = 0;
         for (; i < (N)*(SPS); i++) {
             fprintf(fpt, "%u,", output[i]);

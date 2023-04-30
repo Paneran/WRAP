@@ -23,7 +23,7 @@ int demodulate(const uint16_t * samples, int * symbs, params_r * params) {
     normalize(samples, norm_samples);
     
     if (DEBUG) {
-        FILE *fpt1 = fopen("norm_wave.csv", "w+");
+        FILE *fpt1 = fopen("data/norm_wave.csv", "w+");
         for (int i = 0; i < NUM_SAMPLES; i++) {
             fprintf(fpt1, "%f,", norm_samples[i]);
         }
@@ -66,7 +66,7 @@ int demodulate(const uint16_t * samples, int * symbs, params_r * params) {
     }
 
     if (DEBUG) {
-        FILE *fpt3 = fopen("costa_samples.csv", "w+");
+        FILE *fpt3 = fopen("data/costa_samples.csv", "w+");
         for (int i = 0; i < NUM_SAMPLES; i++) {
             fprintf(fpt3, "%f,", samples_d[i]);
         }
@@ -85,7 +85,7 @@ int demodulate(const uint16_t * samples, int * symbs, params_r * params) {
     }
 
     if(DEBUG) {
-        FILE *fpt2 = fopen("SRRC.csv", "w+");
+        FILE *fpt2 = fopen("data/SRRC.csv", "w+");
         for (int i = 0; i < NUM_SAMPLES; i++) {
             fprintf(fpt2, "%f,", filtered_samps[i]);
         }
@@ -130,7 +130,7 @@ int demodulate(const uint16_t * samples, int * symbs, params_r * params) {
     }
 
     if(DEBUG) {
-        FILE *fpt4 = fopen("sampled.csv", "w+");
+        FILE *fpt4 = fopen("data/sampled.csv", "w+");
         for (int i = 0; i < N; i++) {
             fprintf(fpt4, "%i,", symbs[i]);
         }
