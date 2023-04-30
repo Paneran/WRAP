@@ -5,26 +5,36 @@
 
 int main() {
     // bits to send
-    int bits[N] = {};
+    int key_w_bits[N] = {};     
 
     // initialize arrays and structs
-    uint16_t output[N*SPS];
+    uint16_t output[(N)*(SPS)];
     params_t t_params = {.phase = 0};
     params_r r_params = {.CL_phase = 0, .TR_phase = 0, .sps = SPS};
     int symbs[N];
-    uint8_t out_bits[N];
+    uint8_t bits[N-45];
+    int num_symbs = 0; 
     
-    transmit(bits, output, &t_params);
-    
-    // print transmitted symbols to file
-    FILE *fpt = fopen("MyFile.csv", "w+");
-    int i = 0;
-    for (; i < N*SPS; i++) {
-        fprintf(fpt, "%u,", output[i]);
+    transmit(key_w_bits, output, &t_params);
+    if(DEBUG) {
+        FILE *fpt = fopen("MyFile.csv", "w+");
+        int i = 0;
+        for (; i < (N)*(SPS); i++) {
+            fprintf(fpt, "%u,", output[i]);
+        }
+        fclose(fpt);
     }
-    fclose(fpt);
+    
+    num_symbs = demodulate(output, symbs, &r_params);
 
-    demodulate(output, symbs, &r_params);
-    find_packet(symbs, bits, N);
+    find_packet(symbs, bits, num_symbs);
+
+    int sum = 0;
+
+    for (int i = 0; i < N-45; i++) {
+        printf("%i", bits[i]);
+        sum += (bits[i]!=key_w_bits[i+45]);
+    }
+    printf("\n%i", sum);
     
 }

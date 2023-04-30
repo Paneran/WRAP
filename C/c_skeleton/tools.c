@@ -6,10 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
-// ensure to set MAX_N to your max packet size. 
-// keep this as a power of 2. 
-#define MAX_N 32768
+#include "tools.h"
 
 /* 
 Radix-2 FFT with dynamic programming. Space complexity N.

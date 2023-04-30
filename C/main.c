@@ -5,8 +5,9 @@
 
 int main() {
     // bits to send
-    // packet header = {1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 1};
-    int key_w_bits[N] = {0,1,0,0,1,0,0,1,0,0,
+    // packet header = {1,1,1,0,0,0,1,0,0,1,1,0,1,0,1,1,1,1,0,0,0,1,0,0,1,1,0,1,0,1,1,1,1,0,0,0,1,0,0,1,1,0,1,0,1};
+    int key_w_bits[N] = {1,1,1,0,0,0,1,0,0,1,1,0,1,0,1,1,1,1,0,0,0,1,0,0,1,1,0,1,0,1,1,1,1,0,0,0,1,0,0,1,1,0,1,0,1,
+                         0,1,0,0,1,0,0,1,0,0,
                          1,0,0,0,0,0,0,1,1,0,
                          0,1,0,0,0,1,1,0,1,1,
                          1,1,0,1,1,0,1,1,1,0,
@@ -14,33 +15,32 @@ int main() {
                    
 
     // initialize arrays and structs
-    uint16_t output[N*SPS];
+    uint16_t output[(N)*(SPS)];
     params_t t_params = {.phase = 0};
     params_r r_params = {.CL_phase = 0, .TR_phase = 0, .sps = SPS};
     int symbs[N];
-    uint8_t bits[N];
+    uint8_t bits[N-45];
+    int num_symbs = 0; 
     
     transmit(key_w_bits, output, &t_params);
-
-    demodulate(output, symbs, &r_params);
-
-    find_packet(symbs, bits, N);
-
-    int sum = 0;
-    for (int i = 0; i < N; i++) {
-        bits[i] = (symbs[i]+1)*0.5;
-        sum += (bits[i]!=key_w_bits[i]);
-    }
-
-    printf("%i", sum);
-    
     if(DEBUG) {
         FILE *fpt = fopen("MyFile.csv", "w+");
         int i = 0;
-        for (; i < N*SPS; i++) {
+        for (; i < (N)*(SPS); i++) {
             fprintf(fpt, "%u,", output[i]);
         }
         fclose(fpt);
     }
+    num_symbs = demodulate(output, symbs, &r_params);
+
+    find_packet(symbs, bits, num_symbs);
+
+    int sum = 0;
+
+    for (int i = 0; i < N-45; i++) {
+        printf("%i", bits[i]);
+        sum += (bits[i]!=key_w_bits[i+45]);
+    }
+    printf("\n%i", sum);
     
 }

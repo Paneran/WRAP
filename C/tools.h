@@ -4,10 +4,14 @@
 #include <complex.h>
 #include <stdlib.h>
 
+// ensure to set MAX_N to your max packet size. 
+// keep this as a power of 2. 
+#define MAX_N 32768
+
 // Main Functions
 void xcorr(int * x1, int * x2, int * X, const int l1, const int l2);
 void conv(const float * x1, const float * x2, float * X, const int l1, const int l2);
-void filter(float * x1, const float * x2, float * out, const int l1, const int l2);
+void filter(const float * x1, const float * x2, float * out, const int l1, const int l2);
 
 void complex2float(const float complex* x1, float * X, const int L);
 void float2complex(const float * x1, float complex * X, const int L);

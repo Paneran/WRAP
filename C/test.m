@@ -17,7 +17,7 @@ rolloff = 1;      % parameter of RRC
 RRC = rcosdesign(rolloff, span, sps, 'sqrt');
 
 symbs = (bits-0.5)*2;
-packet = symbs;
+packet = [key, key, key, symbs];
 N = length(packet);
 
 packet_length = N*sps;
@@ -25,8 +25,7 @@ packet_length = N*sps;
 deltas = upsample(packet,sps);
 symbol_wave = conv(deltas, RRC);
 symbol_wave = symbol_wave(length(RRC)/2+0.5:end-length(RRC)/2+0.5);
-t = linspace(0, packet_length-1, packet_length);
-wave = symbol_wave .* cos(2*pi*FC/FS*t);
+wave = symbol_wave .* cos(2*pi*FC/FS*(0:(packet_length-1)));
 
 wave_out = floor((wave+1)*2^11);
 transmit=readmatrix('MyFile.csv');
