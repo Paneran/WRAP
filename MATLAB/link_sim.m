@@ -8,7 +8,7 @@ close all;
 % This version of the code modulates and demodulates the signal.
 % The packet header is found. 
 %%
-Fs = 4000000;             % Sampling rate
+Fs = 5000000;             % Sampling rate
 N  = 300000;               % Number of points sampled
 Tmax = N/Fs;              % length of packet (s)
 Rs = 50000;               % Symbol rate in symbols/sec (baud)
