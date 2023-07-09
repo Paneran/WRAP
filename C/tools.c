@@ -223,7 +223,7 @@ int zeropad(const float * x1, float * X, const int l1, const int l2) {
             X[i] = 0;
         }
     }
-    return i + 1;
+    return i;
 }
 
 /* 
@@ -275,11 +275,12 @@ void filter(const float * x1, const float * x2, float * out, const int l1, const
     float complex C[MAX_N];
     float temp[MAX_N];
     int L = zeropad(x1, temp, l1, l2);
-    FFT(temp, A, L);
-    zeropad(x2, temp, l1, l2);
-    FFT(temp, B, L);
-    multiply_c(A, B, C, L);
-    IFFT(C, A, L);
+    int N = 1<<((int) ceil(log2(L)));
+    FFT(temp, A, N);
+    zeropad(x2, temp, l2, l1);
+    FFT(temp, B, N);
+    multiply_c(A, B, C, N);
+    IFFT(C, A, N);
     complex2float(A, out, l1);
 }
 
@@ -302,7 +303,6 @@ void conv(const float * x1, const float * x2, float * X, const int l1, const int
     float complex C[MAX_N];
     float temp[MAX_N];
     zeropad(x1, temp, l1, l2);
-    // failing at FFT for some reason
     FFT(temp, A, N);
     zeropad(x2, temp, l2, l1);
     FFT(temp, B, N);
